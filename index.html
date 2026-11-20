@@ -104,8 +104,8 @@ body::before{content:"";position:fixed;inset:0;z-index:-3;background:var(--bgi,v
 :root[data-fx] .hero .btn.ghost{background:none;color:#2a1c00;border-color:#2a1c00}
 :root[data-fx]::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:radial-gradient(2px 2px at 18% 24%,#fff,transparent),radial-gradient(1.5px 1.5px at 72% 16%,#ffe9a8,transparent),radial-gradient(2px 2px at 38% 78%,#fff,transparent),radial-gradient(1.5px 1.5px at 86% 62%,var(--acc),transparent),radial-gradient(2px 2px at 8% 66%,#ffe9a8,transparent),radial-gradient(1.5px 1.5px at 55% 40%,#fff,transparent);animation:tw 2.8s ease-in-out infinite alternate}
 @keyframes shn{to{background-position:-250% 0}}@keyframes tw{from{opacity:.25}to{opacity:1}}
-body::after,:root::before{content:"";position:fixed;inset:-300px;pointer-events:none;will-change:transform}body::after{z-index:-1}:root::before{z-index:-2}
-@keyframes drift{to{transform:translate(150px,150px)}}@keyframes drift2{to{transform:translate(-260px,260px)}}
+body::after,:root::before{content:"";position:fixed;inset:0;pointer-events:none}body::after{z-index:-1}:root::before{z-index:-2}
+@keyframes drift{to{background-position:150px 150px}}@keyframes drift2{to{background-position:-260px 260px}}
 @media(prefers-reduced-motion:reduce){body::after,:root::before{animation:none!important}}
 .pbtn{position:relative;display:block;width:100%;padding:18px;border:0;border-radius:18px;font:inherit;font-weight:800;letter-spacing:.2em;font-size:16px;color:#2a1c00;background:linear-gradient(110deg,#b8860b,#ffd700 30%,#fff6c9 50%,#ffd700 70%,#b8860b);background-size:250% 100%;animation:shn 2.6s linear infinite,glow 2s ease-in-out infinite;cursor:pointer;overflow:hidden;box-shadow:0 0 22px rgba(255,200,60,.5)}
 .pbtn::before{content:"";position:absolute;inset:-60%;background:conic-gradient(from 0deg,transparent 0,rgba(255,255,255,.75) 10%,transparent 22%);animation:spn 3s linear infinite}
@@ -191,6 +191,10 @@ button.card.stat{text-align:left;border:0;color:var(--fg);font:inherit;width:100
 .tip{font-size:15px;margin-top:8px;opacity:.9}
 button.card.gc{display:block;width:100%;text-align:left;border:0;color:var(--fg);font:inherit}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+nav{left:0!important;right:0!important;margin-left:auto!important;margin-right:auto!important;transform:none!important;width:min(92vw,400px);display:flex;align-items:center}
+nav .ng{flex:1;display:flex;justify-content:space-around;align-items:center;min-width:0}nav .ng button{flex:1}nav .fab{margin-left:6px;margin-right:6px}
+.skin i{background:linear-gradient(135deg,var(--c),var(--c2)) 0 0/40% 100% no-repeat,var(--g)!important;border:1px solid rgba(128,128,128,.28)}
+:root[data-dd=off] body::after,:root[data-dd=off]::before,:root[data-dd=off][data-fx]::after{display:none!important}
 </style></head>
 <body><main>
 <header><h1 id="ttl"></h1><div id="lv"></div></header>
@@ -250,36 +254,23 @@ function realism(){
 const ring=(p,l)=>`<div style="text-align:center"><svg class="ring" viewBox="0 0 84 84"><circle class="bg" cx="42" cy="42" r="36"/><circle class="fg" cx="42" cy="42" r="36" stroke-dasharray="226" stroke-dashoffset="226" data-p="${p}"/></svg><div class="mut" style="margin-top:6px">${l}</div></div>`;
 
 const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],OD=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];let wkv=0;
-const SK=[
-['mono','Mono',1,'#ff5a36','#ff5a36',0,'#fafaf8'],
-['oranje','Oranje',2,'#ff6a00','#ff2d55',0,'linear-gradient(160deg,#fff4e6,#ffd8ae 55%,#ffb48a)',0,'shoe,dots,run|star|#ff6a00|#ff2d55|.2'],
-['sunset','Sunset',3,'#ff5e8a','#ffae3d',1,'linear-gradient(160deg,#2a0e3a,#5a1450 45%,#c2415d 80%,#ff9a4a)',0,'cloud,star|dots|#ffd1a0|#ff8ab0|.22'],
-['ocean','Ocean',4,'#19c6ff','#2a6bff',1,'linear-gradient(170deg,#031a33,#06406b 55%,#0a7f9c)',0,'wave,dots|ring,wave|#aee9ff|#6ed0ff|.2'],
-['forest','Forest',5,'#35e08a','#b6f23a',1,'linear-gradient(165deg,#06170d,#0c3a22 60%,#1b6b3a)',0,'leaf,dots|mount,leaf|#9cf0b8|#c8f7a0|.2'],
-['neon','Neon',6,'#ff2bd6','#00f0ff',1,'linear-gradient(160deg,#0a0414,#1a0630 50%,#06203a)',0,'bolt,plus|ring,zig|#ff2bd6|#00f0ff|.3'],
-['gold','Gold',7,'#ffc93c','#ff8a1f',1,'linear-gradient(160deg,#0c0a06,#2a1d08 60%,#4a3410)',0,'star,dots|gem|#ffd66b|#ffb347|.22'],
-['aurora','Aurora',8,'#8a6bff','#2de2c1',1,'linear-gradient(120deg,#0b1020,#1c1148,#0b2c3d,#0b1020)',1,'star,spark|wave|#9cf6e0|#b49cff|.25'],
-['lava','Lava',9,'#ff3b1f','#ffb020',1,'linear-gradient(165deg,#1a0404,#4a0d06 55%,#a3260a)',0,'flame,dots|bolt|#ff9a4a|#ffcc70|.25'],
-['galaxy','Galaxy',10,'#a78bfa','#38bdf8',1,'radial-gradient(circle at 15% 8%,#2d1b78,transparent 50%),radial-gradient(circle at 85% 92%,#0b4f85,transparent 50%),#050414',0,'star,spark,dots|ring,star|#c4b5fd|#7dd3fc|.28','#050414'],
-['bubblegum','Bubblegum',11,'#ff3fa4','#8a5cff',0,'linear-gradient(160deg,#fff0f8,#ffd0ec 55%,#ffb6e6)',0,'heart,dots|star|#ff3fa4|#8a5cff|.22'],
-['mint','Mint',12,'#00b383','#00a3d9',0,'linear-gradient(160deg,#e8fff6,#b5f5da 55%,#8be3c8)',0,'leaf,cloud|dots|#00b383|#00a3d9|.2'],
-['sky','Sky',13,'#1e88ff','#00c6ff',0,'linear-gradient(160deg,#eaf6ff,#bfe3ff 55%,#9fd0ff)',0,'cloud,dots|run|#1e88ff|#00c6ff|.2'],
-['lemon','Lemon',14,'#ffb300','#ff6d00',0,'linear-gradient(160deg,#fffbe0,#fff08a 55%,#ffe14d)',0,'spark,dots|zig|#ffb300|#ff6d00|.25'],
-['cherry','Cherry',15,'#ff2d55','#ff7a59',1,'linear-gradient(160deg,#1a0610,#4a0d25 55%,#8a1238)',0,'heart,star|leaf|#ff6a85|#ffb199|.25'],
-['midnight','Midnight',16,'#5b8cff','#9d6bff',1,'linear-gradient(160deg,#05070f,#0a1230 55%,#14235c)',0,'star,spark|ring|#8fb4ff|#b9a2ff|.28'],
-['emerald','Emerald',17,'#1de9a0','#00c2ff',1,'linear-gradient(160deg,#03150f,#064d36 55%,#0a7a55)',0,'gem,leaf|dots|#5dffc4|#7be8ff|.22'],
-['candy','Candy',18,'#ff6bd6','#5cf2d0',1,'linear-gradient(160deg,#1b1030,#35135e 55%,#0f4c5c)',0,'heart,spark,star|ring,zig|#ff6bd6|#5cf2d0|.26'],
-['ice','Ice',19,'#00b8d9','#7c8cff',0,'linear-gradient(160deg,#f0fbff,#d3f1ff 55%,#b8e6ff)',0,'plus,spark|gem|#00b8d9|#7c8cff|.22'],
-['sakura','Sakura',20,'#ff5c8a','#ff9a6b',0,'linear-gradient(160deg,#fff1f5,#ffd6e3 55%,#ffc0d6)',0,'leaf,heart,dots|cloud|#ff5c8a|#ff9a6b|.24'],
-['mocha','Mocha',21,'#e0a96d','#ff7f50',1,'linear-gradient(160deg,#1b120c,#3b2418 55%,#5a3a26)',0,'shoe,dots|run|#e0a96d|#ff7f50|.24'],
+const HN=['Ruby','Scarlet','Coral','Tangerine','Amber','Honey','Lemon','Lime','Chartreuse','Fern','Clover','Jade','Emerald','Pine','Mint','Seafoam','Aqua','Teal','Lagoon','Cyan','Sky','Azure','Ocean','Cobalt','Sapphire','Indigo','Iris','Violet','Grape','Orchid','Plum','Magenta','Fuchsia','Rose','Berry','Cherry'];
+const PTS=[['shoe,dots,run','star'],['wave,dots','ring,wave'],['leaf,dots','mount,leaf'],['bolt,plus','ring,zig'],['heart,dots','star,spark'],['cloud,star','dots,ring'],['gem,spark','plus,dots'],['flame,dots','bolt,spark']];
+const hs=(h,s,l)=>`hsl(${Math.round(((h%360)+360)%360)},${s}%,${l}%)`;
+const SKH=(()=>{const a=[['mono','Classic',1,'#ff5a1f','#ffb020',0,'#f2f2f7']],seen={};
+ for(let i=0;i<19;i++){const h=((i*7)%19)*(360/19)+8,dk=i%2==0,b=HN[Math.floor(h/10)%36];seen[b]=(seen[b]||0)+1;const nm=seen[b]>1?b+' '+seen[b]:b,p=PTS[i%8];
+  a.push([nm.toLowerCase().replace(/\W/g,'')+i,nm,i+2,hs(h,86,dk?58:46),hs(h+38,86,dk?66:52),dk?1:0,dk?`linear-gradient(160deg,${hs(h,55,8)},${hs(h+14,58,16)} 55%,${hs(h+28,62,27)})`:`linear-gradient(160deg,${hs(h,100,97)},${hs(h+14,95,91)} 55%,${hs(h+28,90,83)})`,0,p[0]+'|'+p[1]+'|'+(dk?hs(h+10,90,75):hs(h,70,40))+'|'+(dk?hs(h+40,90,70):hs(h+40,70,45))+'|.24',dk?hs(h,55,8):hs(h,100,97)])}
+ return a})();
+const SK=[...SKH,
+['delft','Delft',21,'#1d4ea0','#4a7fd4',0,'linear-gradient(160deg,#ffffff,#e8eefb 55%,#c9d8f5)',0,'leaf,ring,dots|cloud,star|#1d4ea0|#4a7fd4|.22','#ffffff'],
 ['synthwave','Synthwave',22,'#ff2fa0','#00e5ff',1,'radial-gradient(circle at 50% 58%,#ffd23f 0,#ff5a8a 13%,rgba(255,47,160,0) 14%),linear-gradient(180deg,#0f0026,#3b0a6b 58%,#c2187a 85%,#ff2f9a)',0,'star,dots|bolt,zig|#ff8ad8|#7df3ff|.3','#0f0026'],
 ['matrix','Matrix',23,'#00ff55','#b6ff3b',1,'linear-gradient(160deg,#000000,#021a06 55%,#032a0b)',0,'bin,plus|bin|#00ff55|#35ff8a|.3'],
 ['royal','Royal',24,'#ffd23f','#ff7ad9',1,'linear-gradient(160deg,#12062a,#2a0b5e 55%,#4b1a8f)',1,'crown,gem,star|spark|#ffd23f|#ff7ad9|.3'],
-['rainbow','Rainbow',25,'#ff4d6d','#4dd2ff',1,'linear-gradient(120deg,#ff0080,#ff8c00,#40c9a2,#7928ca,#ff0080)',1,'star,heart,spark|ring|#ffffff|#ffffff|.3'],
-['diamond','Diamond',26,'#7c8cff','#ff7ad9',0,'linear-gradient(120deg,#f4fbff,#e0e9ff,#f0dcff,#e0fff6,#f4fbff)',1,'gem,spark|star|#7c8cff|#ff7ad9|.3'],
-['inferno','Inferno',27,'#ff3b1f','#ffd23f',1,'linear-gradient(180deg,#000000,#2a0600 45%,#7a1400 75%,#ff4d00)',1,'flame,spark|bolt,flame|#ff7a1a|#ffd23f|.3'],
-['deepspace','Deep Space',28,'#7c5cff','#00e5ff',1,'radial-gradient(ellipse at 20% 10%,#2b1a6e,transparent 55%),radial-gradient(ellipse at 85% 90%,#0b4f85,transparent 55%),#02010c',0,'star,spark,ring|star,dots|#cbd5ff|#8fb4ff|.34','#02010c'],
-['hologram','Hologram',29,'#7c5cff','#00d4ff',0,'linear-gradient(120deg,#ffd6f5,#d6e8ff,#d6fff2,#fff3d6,#ffd6f5)',1,'gem,spark,star|ring,zig|#6a5cff|#00b8d9|.3'],
+['aurora','Aurora',25,'#8a6bff','#2de2c1',1,'linear-gradient(120deg,#0b1020,#1c1148,#0b2c3d,#0b1020)',1,'star,spark|wave|#9cf6e0|#b49cff|.25'],
+['inferno','Inferno',26,'#ff3b1f','#ffd23f',1,'linear-gradient(180deg,#000000,#2a0600 45%,#7a1400 75%,#ff4d00)',1,'flame,spark|bolt,flame|#ff7a1a|#ffd23f|.3'],
+['deepspace','Deep Space',27,'#7c5cff','#00e5ff',1,'radial-gradient(ellipse at 20% 10%,#2b1a6e,transparent 55%),radial-gradient(ellipse at 85% 90%,#0b4f85,transparent 55%),#02010c',0,'star,spark,ring|star,dots|#cbd5ff|#8fb4ff|.34','#02010c'],
+['rainbow','Rainbow',28,'#ff4d6d','#4dd2ff',1,'linear-gradient(120deg,#ff0080,#ff8c00,#40c9a2,#7928ca,#ff0080)',1,'star,heart,spark|ring|#ffffff|#ffffff|.3'],
+['diamond','Diamond',29,'#7c8cff','#ff7ad9',0,'linear-gradient(120deg,#f4fbff,#e0e9ff,#f0dcff,#e0fff6,#f4fbff)',1,'gem,spark|star|#7c8cff|#ff7ad9|.3'],
 ['mythic','Mythic',30,'#b388ff','#ff6ec7',1,'linear-gradient(130deg,#0a0220,#2b0a5e 25%,#0a2a5e 50%,#4a0a5e 75%,#0a0220)',1,'star,spark,crown,gem|star,spark,ring|#e6d4ff|#ffb3ec|.36','#0a0220'],
 ['puregold','Pure Gold',0,'#ffd700','#ff9d00',1,'linear-gradient(135deg,#4a3004,#b8860b 20%,#ffd700 42%,#fff2a8 52%,#ffd700 62%,#b8860b 82%,#4a3004)',1,'star,spark,dots|crown,gem|#fff3b0|#ffd700|.34','#2a1c00',1,'#fff6d6',['#fff3b0','#ffd700','#ffb300','#ffffff']],
 ['whitegold','White Gold',0,'#d4a017','#f5c542',0,'linear-gradient(135deg,#ffffff,#fff6dc 30%,#ffe9a6 50%,#fff6dc 70%,#ffffff)',1,'star,spark|crown|#d4a017|#f5c542|.3','#ffffff',1,'#2b2110',['#ffd24a','#ffffff','#f5c542','#e8c36a']],
@@ -290,7 +281,7 @@ const SK=[
 ['celestial','Celestial',0,'#e0a800','#5b8cff',0,'linear-gradient(135deg,#ffffff,#e6f0ff 35%,#fff0c2 65%,#ffffff)',1,'star,spark,gem|ring,cloud|#e0a800|#8fb4ff|.32','#ffffff',2,'#1d2340',['#ffd24a','#8fb4ff','#ffffff','#e0a800']],
 ['obsidian','Obsidian Crown',0,'#ffc93c','#fff0b8',1,'linear-gradient(135deg,#000000,#14100a 35%,#1d170b 50%,#000000 70%,#16110a)',1,'crown,gem,zig|spark,crown|#ffc93c|#fff0b8|.36','#000000',2,'#fff4d8',['#fff0b8','#ffc93c','#ffffff','#e0a800']],
 ['platinum','Platinum Throne',0,'#9aa7c7','#ffd24a',0,'linear-gradient(135deg,#ffffff,#e9edf7 30%,#dfe6f5 50%,#f4f0e2 70%,#ffffff)',1,'crown,star,spark|gem,ring|#8c9bbd|#e0a800|.34','#f6f8ff',2,'#222a40',['#ffffff','#c9d3ee','#ffd24a','#8fb4ff']],
-['eternal','Eternal',0,'#ffd700','#ff4fd8',1,'linear-gradient(130deg,#1a0030,#4a0a6b 25%,#ff9d00 50%,#ffd700 55%,#4a0a6b 75%,#1a0030)',1,'crown,star,spark,gem|spark,star,heart|#fff3b0|#ff9ee8|.4','#0a0220',2,'#fff6d6',['#fff3b0','#ffd700','#ff4fd8','#ffffff']]
+['eternal','Eternal',0,'#ff6ad5','#ffd700',1,'linear-gradient(130deg,#1a0030,#4a0a6b 25%,#ff9d00 50%,#ffd700 55%,#4a0a6b 75%,#1a0030)',1,'crown,star,spark,gem|spark,star,heart|#fff3b0|#ff9ee8|.4','#0a0220',2,'#fff6d6',['#fff3b0','#ffd700','#ff4fd8','#ffffff']]
 ].map(([id,n,lv,c,c2,d,g,an,pt,bg,pr,fg,fx])=>({id,n,lv,c,c2,d,g,an,pt,pr:pr||0,fg,fx,bg:bg||(g.match(/#[0-9a-f]{6}/i)||['#111'])[0]}));
 const DD={dots:'<circle r="2.2"/><circle cx="9" cy="-5" r="1.5"/><circle cx="-8" cy="6" r="1.8"/>',wave:'<path d="M-12 0q6-8 12 0t12 0"/><path d="M-12 7q6-8 12 0t12 0"/>',bolt:'<path d="M3-11L-6 1H1L-3 11 8-3H1z"/>',star:'<path d="M0-9L2.6-3 9-2.8 4-.9 5.6 5.4 0 2-5.6 5.4-4-.9-9-2.8-2.6-3z"/>',heart:'<path d="M0 8C-11-1-6-10 0-4 6-10 11-1 0 8z"/>',leaf:'<path d="M0 9C-9 1-7-8 0-11 7-8 9 1 0 9zM0 9V-4"/>',flame:'<path d="M0 11C-9 9-9-2-2-9-1-4 3-5 3-11 10-4 9 9 0 11z"/>',cloud:'<path d="M-11 5a5 5 0 0 1 2-9 7 7 0 0 1 13-2 5 5 0 0 1 4 11z"/>',plus:'<path d="M0-8V8M-8 0H8"/>',ring:'<circle r="7"/><circle r="2.5"/>',zig:'<path d="M-12 0l4-6 4 6 4-6 4 6 4-6"/>',shoe:'<path d="M-11 5V-3l6-1 3 4h11a3 3 0 0 1 3 3v2zM-6 1l2 2"/>',run:'<circle cx="1" cy="-9" r="2.6"/><path d="M0-5L-1 4M0-3L-6 0M0-3L6-1M-1 4L-6 10M-1 4L5 9"/>',mount:'<path d="M-12 9L-4-5 1 3 5-2 12 9z"/>',gem:'<path d="M-8-3L-4-8H4L8-3 0 9zM-8-3H8"/>',spark:'<path d="M0-10Q1-1 10 0 1 1 0 10-1 1-10 0-1-1 0-10z"/>',crown:'<path d="M-9 6L-10-5-4 0 0-8 4 0 10-5 9 6z"/>',bin:'<text y="4" x="-8" font-size="11" font-family="monospace" fill="currentColor" stroke="none">01</text>'};
 const tile=(nm,col,op)=>{const Q=[[24,26,-14,1.3],[88,34,12,1.1],[34,88,20,1.2],[96,94,-8,1.4]],g=Q.map((p,i)=>`<g transform="translate(${p[0]} ${p[1]}) rotate(${p[2]}) scale(${p[3]})">${DD[nm[i%nm.length]]}</g>`).join('');return'url("data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><g fill="none" stroke="${col}" color="${col}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="${op}">${g}</g></svg>`)+'")'};
@@ -473,11 +464,11 @@ function socialView(){
  const fd=FEED.filter(x=>!x.bot||x.vs==uid),my=[...S.runs].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,3);
  return`${board(fd)}${my.length?`<div class="sh">Share</div><div class="grp">${my.map(x=>{const st=shSt(x);return`<button class="rw2 b" data-opensh="${x.id}"><span class="rt"><b>${x.km} km</b><small>${x.d.slice(5)} · ${fP(x.min*60/x.km)}</small></span>${st=='on'?I('check',18,2.4):I('share',18)}</button>`}).join('')}</div>`:''}${fd.length?'<div class="sh">Feed</div>'+fd.map(pcard).join(''):''}`;
 }
-const skinTile=(k,cs)=>{const u=unl(k);return`<button class="skin ${cs==k.id?'on':''} ${k.pr?'pr':''}" data-skin="${u?k.id:''}" ${u?'':'data-lock="1"'} style="--c:${k.c};--c2:${k.c2}"><i></i><b>${k.n}</b><span>${u?(cs==k.id?I('check',14,2.6):''):I('lock',13,2)+' '+(k.pr?'Prestige '+ROM[k.pr]:'Level '+k.lv)}</span></button>`};
+const skinTile=(k,cs)=>{const u=unl(k);return`<button class="skin ${cs==k.id?'on':''} ${k.pr?'pr':''}" data-skin="${u?k.id:''}" ${u?'':'data-lock="1"'} style="--c:${k.c};--c2:${k.c2};--g:${k.g}"><i></i><b>${k.n}</b><span>${u?(cs==k.id?I('check',14,2.6):''):I('lock',13,2)+' '+(k.pr?'Prestige '+ROM[k.pr]:'Level '+k.lv)}</span></button>`};
 const badgeCard=()=>`<div class="card"><div class="bdg">${BG.map(b=>`<div class="${b[2]()?'on':''}">${I(b[0],26)}<span>${b[1]}</span></div>`).join('')}</div></div>`;
 function levelView(){
  const xi=xpInfo(),p=prof(),cs=S.skin||'mono',mx=xi.L>=30,sec=(t,l)=>`<div class="sh">${t}</div><div class="card"><div class="grid" style="margin:0">${l.map(k=>skinTile(k,cs)).join('')}</div></div>`;
- return`<button class="card prof" data-sheet="avatar">${av(p,xi.L,60)}<div class="pt"><b>${esc(p.name)}</b><span>${xi.pc?'Prestige '+ROM[xi.pc]+' · ':''}${title(xi.L)}</span></div>${I('chev',18,2.2)}</button><div class="card" style="text-align:center"><div class="lvn" style="font-size:72px">${xi.L}</div><div class="bar"><i data-w="${Math.round(xi.x/xi.n*100)}"></i></div><div class="mut">${mx?'Max level':xi.x.toLocaleString()+' / '+xi.n.toLocaleString()+' XP'}</div>${mx&&xi.pc<10?`<button class="pbtn" data-prestige="1" style="margin-top:14px"><span>${I('crown',18,2.2)}Prestige</span></button>`:''}</div><div class="sh">Badges</div>${badgeCard()}${sec('Skins',SK.filter(k=>!k.pr))}${sec('Prestige I',SK.filter(k=>k.pr==1))}${sec('Prestige II',SK.filter(k=>k.pr==2))}<div class="sh">Help</div><div class="grp"><button class="rw2 b" data-sheet="help"><span class="ri" style="background:#007aff">${I('info',17,2)}</span><span class="rt">Guide &amp; glossary</span>${I('chev',16,2.2)}</button><button class="rw2 b" data-sheet="intro"><span class="ri" style="background:#5856d6">${I('play',17,2)}</span><span class="rt">Replay intro</span>${I('chev',16,2.2)}</button></div><div class="sh">Settings</div><div class="grp"><div class="rw2"><span class="ri" style="background:#ff9500">${I('vol',17,2)}</span><span class="rt">Sounds</span>${sw(!S.mute,'data-snd="1"','Sounds')}</div><button class="rw2 b" data-sheet="goal"><span class="ri" style="background:#34c759">${I('flag',17,2)}</span><span class="rt">Goal</span><span class="rr">${S.goal.km} km</span>${I('chev',16,2.2)}</button></div><div class="grp"><button class="rw2 b dng" data-sheet="confirm" data-a="runs"><span class="rt">Reset runs & XP</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="prof"><span class="rt">Reset profile</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="all"><span class="rt">Reset everything</span></button></div>`;
+ return`<button class="card prof" data-sheet="avatar">${av(p,xi.L,60)}<div class="pt"><b>${esc(p.name)}</b><span>${xi.pc?'Prestige '+ROM[xi.pc]+' · ':''}${title(xi.L)}</span></div>${I('chev',18,2.2)}</button><div class="card" style="text-align:center"><div class="lvn" style="font-size:72px">${xi.L}</div><div class="bar"><i data-w="${Math.round(xi.x/xi.n*100)}"></i></div><div class="mut">${mx?'Max level':xi.x.toLocaleString()+' / '+xi.n.toLocaleString()+' XP'}</div>${mx&&xi.pc<10?`<button class="pbtn" data-prestige="1" style="margin-top:14px"><span>${I('crown',18,2.2)}Prestige</span></button>`:''}</div><div class="sh">Badges</div>${badgeCard()}${sec('Skins',SK.filter(k=>!k.pr))}${sec('Prestige I',SK.filter(k=>k.pr==1))}${sec('Prestige II',SK.filter(k=>k.pr==2))}<div class="sh">Help</div><div class="grp"><button class="rw2 b" data-sheet="help"><span class="ri" style="background:#007aff">${I('info',17,2)}</span><span class="rt">Guide &amp; glossary</span>${I('chev',16,2.2)}</button><button class="rw2 b" data-sheet="intro"><span class="ri" style="background:#5856d6">${I('play',17,2)}</span><span class="rt">Replay intro</span>${I('chev',16,2.2)}</button></div><div class="sh">Settings</div><div class="grp"><div class="rw2"><span class="ri" style="background:#ff9500">${I('vol',17,2)}</span><span class="rt">Sounds</span>${sw(!S.mute,'data-snd="1"','Sounds')}</div><div class="rw2"><span class="ri" style="background:#af52de">${I('spark',17,2)}</span><span class="rt">Background icons</span>${sw(!S.nodd,'data-dd="1"','Background icons')}</div><button class="rw2 b" data-sheet="goal"><span class="ri" style="background:#34c759">${I('flag',17,2)}</span><span class="rt">Goal</span><span class="rr">${S.goal.km} km</span>${I('chev',16,2.2)}</button></div><div class="grp"><button class="rw2 b dng" data-sheet="confirm" data-a="runs"><span class="rt">Reset runs & XP</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="prof"><span class="rt">Reset profile</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="all"><span class="rt">Reset everything</span></button></div>`;
 }
 function fx(e){
  const k=SK.find(z=>z.id==document.documentElement.dataset.fx);if(!k||!e.clientX)return;
@@ -498,11 +489,11 @@ function showPrestige(pc,ns){
 function tick(){const el=$('#cd');if(!el)return;let t=Math.max(0,P(S.goal.date).getTime()+9*36e5-Date.now());const d=Math.floor(t/864e5);t-=d*864e5;const h=Math.floor(t/36e5);t-=h*36e5;const m=Math.floor(t/6e4),sc=Math.floor((t-m*6e4)/1e3),z=n=>String(n).padStart(2,'0');el.innerHTML=`<b>${d}</b>d ${z(h)}:${z(m)}:${z(sc)}`}
 function render(){
  clearInterval(timer);
- const sk=SK.find(k=>k.id==S.skin&&unl(k))||SK[0],rt=document.documentElement;rt.dataset.skin=sk.id;if(SKST.dataset.i!=sk.id){SKST.textContent=sk.id=='mono'?'':skinCss(sk);SKST.dataset.i=sk.id}if(sk.fx)rt.dataset.fx=sk.id;else delete rt.dataset.fx;
+ const sk=SK.find(k=>k.id==S.skin&&unl(k))||SK[0],rt=document.documentElement;rt.dataset.skin=sk.id;if(SKST.dataset.i!=sk.id){SKST.textContent=sk.id=='mono'?'':skinCss(sk);SKST.dataset.i=sk.id}if(sk.fx)rt.dataset.fx=sk.id;else delete rt.dataset.fx;rt.dataset.dd=S.nodd?'off':'on';
  const g=!!S.goal,xi=xpInfo(),act=t=>t==tab?'on':'';
  $('#ttl').textContent=g?({plan:'Today',stats:'Stats',social:'Social',me:'Me'}[tab]||'Today'):'RunQuest';
  $('#nav').style.display=g?'':'none';
- $('#nav').innerHTML=g?`<button class="${act('plan')}" data-tab="plan">${I('today',24)}<em>Today</em></button><button class="${act('stats')}" data-tab="stats">${I('stats',24)}<em>Stats</em></button><button class="fab" data-tab="log" aria-label="Log a run">${I('plus',30,2.2)}</button>${HAS()?`<button class="${act('social')}" data-tab="social">${I('social',24)}<em>Social</em></button>`:''}<button class="${act('me')}" data-tab="me">${I('me',24)}<em>Me</em></button>`:'';
+ $('#nav').innerHTML=g?`<div class="ng"><button class="${act('plan')}" data-tab="plan">${I('today',24)}<em>Today</em></button><button class="${act('stats')}" data-tab="stats">${I('stats',24)}<em>Stats</em></button></div><button class="fab" data-tab="log" aria-label="Log a run">${I('plus',30,2.2)}</button><div class="ng">${HAS()?`<button class="${act('social')}" data-tab="social">${I('social',24)}<em>Social</em></button>`:''}<button class="${act('me')}" data-tab="me">${I('me',24)}<em>Me</em></button></div>`:'';
  $('#lv').innerHTML=g?`<button class="lvc ${xi.L>=30?'rdy':''}" data-tab="me" aria-label="Profile, level ${xi.L}">${av(prof(),xi.L,28)}<b>${xi.L}</b><span class="xb"><i data-w="${Math.round(xi.x/xi.n*100)}"></i></span></button>`:'';
  const v=$('#v');
  v.innerHTML=!g?(S.seen?goalForm(false):welcome()):tab=='stats'?statsView():tab=='social'?(socInit(),socialView()):tab=='me'?levelView():planView();
@@ -545,6 +536,7 @@ document.addEventListener('click',e=>{
  else if(d.do){const k=d.do;if(k=='runs'){S.runs=[];S.rests=[];S.bx=0;S.q={};S.pr=[];S.ai=null}else if(k=='prof'){S.prof=null;S.skin=''}else{const m=S.mute;S=def();S.mute=m;F={km:21.1,lv:'m',feel:3};tab='plan'}save();closeSheet();snd('ok');render()}
  else if(d.like){if(socSt=='on'){const rf=DB.doc('likes/'+d.like+'__'+uid);(LK.mine.has(d.like)?rf.delete():rf.set({p:d.like,u:uid})).catch(()=>{})}}
  else if(d.delp){if(socSt=='on'){DB.doc('posts/'+d.delp).delete().catch(()=>{});DB.doc('posts/mike_'+d.delp).delete().catch(()=>{});Object.keys(S.sh||{}).forEach(k=>{if(S.sh[k]==d.delp)delete S.sh[k]});save()}}
+ else if(d.dd){S.nodd=!S.nodd;save();render()}
  else if(d.bonus){F.bonus=F.bonus?0:1;b.classList.toggle('on');b.setAttribute('aria-checked',!!F.bonus)}
  else if(d.wk!==undefined){wkv=+d.wk;render()}
  else if(d.av){const k=iso(new Date(+ws0(new Date())+wkv*WK));S.av=S.av||{};let a=S.av[k]||plan(wkv).d.slice();a=a.includes(d.av)?a.filter(z=>z!=d.av):[...a,d.av];if(a.length){S.av[k]=a;S.ai=null;save()}render()}
