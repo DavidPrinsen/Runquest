@@ -123,6 +123,8 @@ h2{margin:0 0 14px;font-size:24px;font-weight:700;letter-spacing:-.02em}
 .nt{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:260;display:flex;gap:12px;width:min(94vw,420px);margin:0 auto;padding:12px 14px;background:var(--navbg);color:var(--fg);border-radius:22px;box-shadow:0 16px 40px -12px rgba(0,0,0,.45);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);transform:translateY(-150%);transition:transform .5s cubic-bezier(.32,.72,0,1)}
 .nt.in{transform:none}.ntb{flex:1;min-width:0}.nth{display:flex;justify-content:space-between;align-items:baseline;font-size:15px}.nth span{font-size:13px;color:var(--mut)}
 .ntl{font-size:15px;line-height:1.3}.ntl.m{margin-top:2px;color:var(--mut)}
+.dn{flex:none;width:44px;display:flex;flex-direction:column;align-items:center;line-height:1.15}.dn b{font-size:13px;font-weight:600;color:var(--mut)}.dn small{font-size:20px;font-weight:700;color:var(--fg)}
+.dayr .rr{font-weight:600;color:var(--fg)}.dayr.td{background:var(--sep);box-shadow:inset 3px 0 0 var(--acc)}.dayr.rs{opacity:.55}.dayr.ok .rt b,.dayr.ok .rr{color:var(--acc)}
 /* ---------- navigation ---------- */
 nav{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);z-index:90;display:flex;align-items:center;width:min(92vw,400px);margin:0 auto;padding:6px 8px;background:var(--navbg);border-radius:32px;box-shadow:0 20px 44px -14px rgba(0,0,0,.5);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
 nav .ng{flex:1;display:flex;justify-content:space-around;align-items:center;min-width:0}
@@ -184,9 +186,12 @@ const P=s=>{const[a,b,c]=s.split('-');return new Date(a,b-1,c)};
 const iso=d=>{d=new Date(d);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const def=()=>({goal:null,runs:[],ai:null});
-let S;try{S=JSON.parse(localStorage.getItem('stride')||'')||def()}catch(e){S=def()}
-const save=()=>{try{localStorage.setItem('stride',JSON.stringify(S))}catch(e){}};
-let tab=S.goal?'plan':'goal',F={km:21.1,lv:'m',feel:3},timer;
+const LS={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},del:k=>{try{localStorage.removeItem(k)}catch(e){}}};
+let S=def(),ACC=null,AIDX=[];
+try{AIDX=JSON.parse(LS.get('rq.idx')||'[]')||[]}catch(e){AIDX=[]}
+if(!AIDX.length){const o=LS.get('stride');if(o){try{const d=JSON.parse(o),p=d.prof||{};if(d&&(d.goal||(d.runs&&d.runs.length))){const id='a'+Date.now();LS.set('rq.a.'+id,o);AIDX.push({id,name:p.name||'Runner',e:p.e||'run',c:p.c||'#ff5a1f',pic:p.pic||'',L:1,pc:0,g:d.goal?d.goal.km:0});LS.set('rq.idx',JSON.stringify(AIDX))}}catch(e){}}}
+const save=()=>{if(!ACC)return;LS.set('rq.a.'+ACC,JSON.stringify(S));const x=xpInfo(),p=prof(),e={id:ACC,name:p.name,e:p.e,c:p.c,pic:p.pic||'',L:x.L,pc:x.pc,g:S.goal?S.goal.km:0},i=AIDX.findIndex(a=>a.id==ACC);if(i>=0)AIDX[i]=e;else AIDX.push(e);LS.set('rq.idx',JSON.stringify(AIDX))};
+let tab='plan',F=FDEF(),timer;
 const fT=m=>{m=Math.round(m);return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'};
 const fP=s=>{s=Math.round(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+'/km'};
 const ws0=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x};
@@ -197,33 +202,6 @@ const peak=g=>{const k=g.km,b=k<=5?25:k<=10?25+(k-5)*2:k<=21.1?35+(k-10)*1.35:50
 const total=()=>Math.max(1,Math.round((ws0(P(S.goal.date))-ws0(new Date(S.goal.start)))/WK)+1);
 const cur=()=>Math.min(Math.max(0,Math.round((ws0(new Date())-ws0(new Date(S.goal.start)))/WK)),total()-1);
 
-function plan(off=0){
- const g=S.goal,n=total(),i=Math.min(cur()+off,n-1),pk=peak(g),st=pk*{b:.35,m:.7,a:.85}[g.lv];
- let v=st+(pk-st)*Math.min(i/Math.max(n-3,1),1),note='';
- if(i>=n-1&&n>2){v=pk*.5;note='Race week: short and sharp, rest up.'}
- else if(i==n-2&&n>3){v=pk*.78;note='Taper begins: less volume, same freshness.'}
- else if((i+1)%4==0){v*=.8;note='Recovery week: absorbing the training.'}
- const prev=runsIn(new Date(+ws0(new Date())-WK)),pa=sum(prev);
- if(!off&&i>0&&pa>0){const hard=prev.reduce((s,r)=>s+r.feel,0)/prev.length>=4.5,cap=pa*(hard?.9:1.1);
-  if(cap<v){v=cap;note=hard?'Last week felt very hard, so volume is trimmed 10%.':'Based on what you actually ran last week (max +10%).'}}
- if(off)note=(note?note+' ':'')+'Projected, adapts as you log.';v=Math.max(v,{b:8,m:22,a:35}[g.lv]);
- const av=(S.av||{})[iso(new Date(+ws0(new Date())+off*WK))],nb={b:3,m:4,a:5}[g.lv],nr=av?Math.min(nb,av.length):nb,
- T={1:['Long'],2:['Quality','Long'],3:['Easy','Quality','Long'],4:['Easy','Quality','Easy','Long'],5:['Recovery','Easy','Quality','Easy','Long']}[nr],
- W={1:[1],2:[.4,.6],3:[.3,.25,.45],4:[.22,.22,.2,.36],5:[.12,.2,.22,.14,.32]}[nr],
- AD=av?[...av].sort((a,b)=>OD.indexOf(a)-OD.indexOf(b)):{3:['Tue','Thu','Sun'],4:['Mon','Wed','Fri','Sun'],5:['Mon','Tue','Thu','Fri','Sun']}[nb],
- D=nr>=AD.length?AD:[...Array(nr)].map((_,k)=>AD[nr==1?AD.length-1:Math.round(k*(AD.length-1)/(nr-1))]);
- const gV0=vdotOf(g.km,g.min),bb=best(),nV=bb?vdotOf(bb.km,bb.min):gV0*.88,gV=bb?Math.min(gV0,nV*1.15):gV0,V=Math.max(25,Math.min(80,nV+(gV-nV)*Math.min(1,i/Math.max(n-2,1)))),bg=g.lv=='b'?10:0;
- const O={Easy:[pz(V,.66)+bg,'Conversational pace'],Recovery:[pz(V,.62)+bg,'Very easy shake-out'],Long:[pz(V,.67)+bg,'Slow and steady, bring fuel'],Quality:g.lv=='b'?[pz(V,.78),'Fartlek: 1 min quick, 2 min easy']:i%2?[pz(V,.97),`${4+Math.min(i,8)}×800 m @ ${fP(pz(V,.97))}, 90 s jog`]:[pz(V,.86),`10 min easy · ${15+Math.min(i,5)*2} min @ tempo · 10 min easy`]};
- const lcap=Math.min(g.km*(i>=n-2?.7:1),32),mk={b:2.5,m:5,a:6}[g.lv];
- const s=T.map((t,k)=>{let km=v*W[k];km=Math.max(km,t=='Long'?mk*1.6:mk);if(t=='Long')km=Math.min(km,lcap);km=Math.max(2,Math.round(km*2)/2);
-  return{day:D[k],type:t=='Quality'?(g.lv=='b'?'Fartlek':i%2?'Intervals':'Tempo'):t,km,pace:fP(O[t][0]),desc:O[t][1]}});
- return{v:sum(s),note,s,n,i,pk,d:AD,ph:(i>=n-2&&n>3?'Taper':i/n<.4?'Base':i/n<.75?'Build':'Peak')};
-}
-function realism(){
- const g=S.goal,c=S.runs.filter(r=>r.km>=3&&+P(r.d)>=Date.now()-8*WK).sort((a,b)=>a.min/a.km-b.min/b.km)[0];
- if(!c)return null;const pr=c.min*Math.pow(g.km/c.km,1.06),q=g.min/pr;
- return{pr,t:q<.93?'Ambitious: needs real progress':q<=1.06?'Realistic':'Comfortable'};
-}
 const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],OD=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];let wkv=0;
 const HN=['Ruby','Scarlet','Coral','Tangerine','Amber','Honey','Lemon','Lime','Chartreuse','Fern','Clover','Jade','Emerald','Pine','Mint','Seafoam','Aqua','Teal','Lagoon','Cyan','Sky','Azure','Ocean','Cobalt','Sapphire','Indigo','Iris','Violet','Grape','Orchid','Plum','Magenta','Fuchsia','Rose','Berry','Cherry'];
 const PTS=[['shoe,dots,run','star'],['wave,dots','ring,wave'],['leaf,dots','mount,leaf'],['bolt,plus','ring,zig'],['heart,dots','star,spark'],['cloud,star','dots,ring'],['gem,spark','plus,dots'],['flame,dots','bolt,spark']];
@@ -310,7 +288,6 @@ async function imp(fl){
  if(!n)toast('No new runs found');
 }
 let AC;function snd(k){if(S.mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime,pz=k=='pres',f=k=='ok'?[660,990]:k=='lvl'?[523,659,784,1047,1319,1568]:pz?[261,392,523,659,784,1047,1319,1568,2093]:[k=='sel'?540:400],sp=pz?.13:.07;f.forEach((hz,i)=>{const o=AC.createOscillator(),g=AC.createGain(),a=t+i*sp;o.type=pz?'sine':'triangle';o.frequency.value=hz;g.gain.setValueAtTime(.001,a);g.gain.exponentialRampToValueAtTime(pz?.18:.13,a+.01);g.gain.exponentialRampToValueAtTime(.001,a+(pz?.5:.09));o.connect(g);g.connect(AC.destination);o.start(a);o.stop(a+(pz?.55:.1))});navigator.vibrate&&navigator.vibrate(pz?[40,60,40,60,40,60,200]:k=='lvl'?[30,40,30,40,90]:k=='ok'?[12,40,12]:8)}catch(e){}}
-const isDone=x=>runsIn(ws0(new Date())).some(r=>DAYS[P(r.d).getDay()]==x.day&&r.km>=x.km*.7);
 const best=()=>S.runs.filter(r=>r.km>=3).sort((a,b)=>a.min/a.km-b.min/b.km)[0];
 const load=(d)=>S.runs.filter(r=>{const t=+P(r.d);return t>Date.now()-d*864e5}).reduce((s,r)=>s+r.km*(.6+r.feel*.2),0);
 const vdotOf=(km,t)=>{const v=km*1000/t,p=.8+.1894393*Math.exp(-.012778*t)+.2989558*Math.exp(-.1932605*t);return(-4.6+.182258*v+.000104*v*v)/p};
@@ -351,15 +328,15 @@ function calCard(){
  const cells=[...Array(off)].map(()=>'<i></i>').concat([...Array(dim)].map((_,i)=>{const d=iso(new Date(y,m,i+1)),v=km[d]||0;return`<i class="${v?'hv':''} ${d==iso(n)?'td':''}" style="--a:${Math.min(1,.3+v/18).toFixed(2)}">${i+1}</i>`}));
  return`<div class="card"><span class="lbl">${n.toLocaleString('en',{month:'long'})} · ${tm.toFixed(1)} km</span><div class="cal">${hd}${cells.join('')}</div></div>`;
 }
-function fixAI(a,g,p){const mn=g.lv=='b'?2:5;let s=a.slice(0,7).map(x=>({...x,km:Math.max(mn,Math.min(+x.km||0,p.v*.45))}));const t=s.reduce((q,x)=>q+x.km,0),c=p.v*1.12;if(t>c)s=s.map(x=>({...x,km:Math.max(mn,x.km*c/t)}));return s.map(x=>({...x,km:Math.round(x.km*2)/2}))}
+function fixAI(a,g,p){const mn=2;let s=a.slice(0,7).map(x=>({...x,km:Math.max(mn,Math.min(+x.km||0,p.v*.45))}));const t=s.reduce((q,x)=>q+x.km,0),c=p.v*1.05;if(t>c)s=s.map(x=>({...x,km:Math.max(mn,x.km*c/t)}));return s.map(x=>({...x,km:Math.round(x.km*2)/2}))}
 async function askAI(btn){
  let sample=null;try{sample=window.claude?.use?await window.claude.use('sample'):null}catch(e){}
  if(!sample){btn.textContent='AI unavailable';return}
  btn.disabled=true;btn.textContent='Thinking…';
  const g=S.goal,p=plan(),recent=S.runs.slice(-8);
  try{
-  const wk4=[3,2,1,0].map(k=>+sum(runsIn(new Date(+ws0(new Date())-k*WK))).toFixed(1)),fl=S.runs.slice(-6).map(x=>x.feel),af=fl.length?(fl.reduce((a,b)=>a+b,0)/fl.length).toFixed(1):'n/a',bb=best(),V=Math.round(bb?vdotOf(bb.km,bb.min):vdotOf(g.km,g.min)*.88),Z=[['easy',.66],['marathon',.8],['tempo',.86],['interval',.97]].map(([nm,fc])=>nm+' '+fP(pz(V,fc))).join(', '),ac=(load(7)/((load(28)/4)||1)).toFixed(2);
-  const r=await sample.json(`You are an elite running coach (Daniels, Pfitzinger and 80/20 methods). ATHLETE: age ${g.age}, level ${g.lv=='b'?'beginner':g.lv=='m'?'intermediate':'advanced'}, goal ${g.km} km in ${g.min} min on ${g.date} (${p.n-p.i-1} weeks left, ${p.ph} phase), VDOT ${V}, paces: ${Z}. Last 4 weeks km (oldest to newest): ${JSON.stringify(wk4)}. Average effort of recent runs (1 easy to 5 hard): ${af}. Acute:chronic load ${ac}. Recent runs [date,km,min,feel]: ${JSON.stringify(S.runs.slice(-8).map(x=>[x.d,x.km,x.min,x.feel]))}. Available days: ${p.d.join(',')}. BASELINE (keep these days): ${JSON.stringify(p.s)}, total ${p.v} km. RULES: about 80% easy and 20% hard; never more than 10% over last week's actual km; no hard sessions on consecutive days; long run at most 35% of the week; quality sessions must be structured (warm-up, reps with rest or tempo minutes, cool-down); every pace must come from the paces above; ${g.lv=='b'?'keep it gentle and consistent':'NOT a beginner: every run at least 5 km, long run at least 8 km, push about 10% above the baseline, challenging but safe'}; if acute:chronic is above 1.4 or effort is 4.5+, reduce load. Reply ONLY JSON: {"sessions":[{"day":"Mon","type":"Easy","km":5,"pace":"6:10/km","desc":"short structured description"}]}`,{modelTier:g.lv=='b'?'default':'complex'});
+  const wk4=[3,2,1,0].map(k=>+sum(runsIn(new Date(+ws0(new Date())-k*WK))).toFixed(1)),fl=S.runs.slice(-6).map(x=>x.feel),af=fl.length?(fl.reduce((a,b)=>a+b,0)/fl.length).toFixed(1):'n/a',V=Math.round(vFromEasy(easyPace())),Z=[['easy',.66],['marathon',.8],['tempo',.86],['interval',.97]].map(([nm,fc])=>nm+' '+fP(pz(V,fc))).join(', '),ac=(load(7)/((load(28)/4)||1)).toFixed(2);
+  const r=await sample.json(`You are an elite running coach (Daniels, Pfitzinger and 80/20 methods). ATHLETE: age ${g.age}, level ${g.lv=='b'?'beginner':g.lv=='m'?'intermediate':'advanced'}, goal ${g.km} km in ${g.min} min on ${g.date} (${p.n-p.i-1} weeks left, ${p.ph} phase), VDOT ${V}, paces: ${Z}. Last 4 weeks km (oldest to newest): ${JSON.stringify(wk4)}. Average effort of recent runs (1 easy to 5 hard): ${af}. Acute:chronic load ${ac}. Recent runs [date,km,min,feel]: ${JSON.stringify(S.runs.slice(-8).map(x=>[x.d,x.km,x.min,x.feel]))}. Available days: ${p.d.join(',')}. BASELINE (keep these days): ${JSON.stringify(p.s)}, total ${p.v} km. RULES: about 80% easy and 20% hard; never more than 10% over last week's actual km; no hard sessions on consecutive days; long run at most 35% of the week; quality sessions must be structured (warm-up, reps with rest or tempo minutes, cool-down); every pace must come from the paces above; do not add distance to the baseline, only adjust session types, order and paces; if acute:chronic is above 1.4 or effort is 4.5+, reduce load. Reply ONLY JSON: {"sessions":[{"day":"Mon","type":"Easy","km":5,"pace":"6:10/km","desc":"short structured description"}]}`,{modelTier:g.lv=='b'?'default':'complex'});
   if(r&&Array.isArray(r.sessions)&&r.sessions.length){S.ai={week:iso(ws0(new Date())),note:r.note,s:fixAI(r.sessions,g,p)};save()}
  }catch(e){}
  render();
@@ -378,13 +355,13 @@ const seg=(a,cur,at)=>`<div class="seg">${a.map(([v,l])=>`<button class="${Strin
 let SH=null;
 function openSheet(n,a){SH={n,a};renderSheet();$('#sh').classList.add('o');document.body.classList.add('lock')}
 function closeSheet(){SH=null;$('#sh').classList.remove('o');document.body.classList.remove('lock');setTimeout(()=>{if(!SH)$('#sh .sb').innerHTML=''},450)}
-function renderSheet(){if(SH)$('#sh .sb').innerHTML=({log:sLog,run:sRun,goal:()=>goalForm(true),avatar:sAvatar,confirm:sConfirm,help:sHelp,term:sTerm,intro:sIntro})[SH.n](SH.a)}
+function renderSheet(){if(SH)$('#sh .sb').innerHTML=({log:sLog,run:sRun,goal:()=>goalForm(true),avatar:sAvatar,confirm:sConfirm,help:sHelp,term:sTerm,intro:sIntro,avail:sAvail,day:sDay,newacc:sNewAcc})[SH.n](SH.a)}
 const rr=()=>{render();renderSheet()};
 function sAvatar(){
  const p=prof(),L=xpInfo().L;
  return`<h2>Profile</h2><div style="display:grid;place-items:center;margin:4px 0 16px">${av(p,L,84)}</div><div class="grp"><label class="rw2"><span class="rt">Name</span><input id="pn" value="${esc(p.name)}" maxlength="20"></label></div><div class="sh">Icon</div><div class="avg">${AVS.map(k=>`<button class="avb ${p.e==k&&!p.pic?'on':''}" data-em="${k}">${I(k,24)}</button>`).join('')}</div><div class="sh">Colour</div><div class="avg">${CL.map(c=>`<button class="avb cl ${p.c==c?'on':''}" data-cl="${c}" style="--c:${c}"></button>`).join('')}</div><div class="grp"><label class="rw2 b">${I('cam',18)}<span class="rt">Choose photo</span><input id="pp" type="file" accept="image/*" hidden></label>${p.pic?`<button class="rw2 b dng" data-nopic="1">${I('trash',18)}<span class="rt">Remove photo</span></button>`:''}</div>`;
 }
-function sConfirm(k){const t={runs:'Reset runs & XP',prof:'Reset profile',all:'Reset everything'}[k];return`<h2>${t}?</h2><button class="btn dngb" data-do="${k}">${t}</button><button class="btn ghost" data-close="1" style="margin-top:10px">Cancel</button>`}
+function sConfirm(k){const t={runs:'Reset runs & XP',prof:'Reset profile',all:'Reset everything',acc:'Delete this runner'}[k];return`<h2>${t}?</h2><button class="btn dngb" data-do="${k}">${t}</button><button class="btn ghost" data-close="1" style="margin-top:10px">Cancel</button>`}
 function pBanner(){const g=xpInfo();return g.L>=30&&g.pc<10?`<button class="pbtn" data-prestige="1" style="margin-bottom:14px"><span>${I('crown',18,2.2)}Prestige</span></button>`:''}
 const skinTile=(k,cs)=>{const u=unl(k);return`<button class="skin ${cs==k.id?'on':''} ${k.pr?'pr':''}" data-skin="${u?k.id:''}" ${u?'':'data-lock="1"'} style="--c:${k.c};--c2:${k.c2};--g:${k.g}"><i></i><b>${k.n}</b><span>${u?(cs==k.id?I('check',14,2.6):''):I('lock',13,2)+' '+(k.pr?'Prestige '+ROM[k.pr]:'Level '+k.lv)}</span></button>`};
 const badgeCard=()=>`<div class="card"><div class="bdg">${BG.map(b=>`<div class="${b[2]()?'on':''}">${I(b[0],26)}<span>${b[1]}</span></div>`).join('')}</div></div>`;
@@ -407,6 +384,7 @@ function showPrestige(pc,ns){
 function tick(){const el=$('#cd');if(!el)return;let t=Math.max(0,P(S.goal.date).getTime()+9*36e5-Date.now());const d=Math.floor(t/864e5);t-=d*864e5;const h=Math.floor(t/36e5);t-=h*36e5;const m=Math.floor(t/6e4),sc=Math.floor((t-m*6e4)/1e3),z=n=>String(n).padStart(2,'0');el.innerHTML=`<b>${d}</b>d ${z(h)}:${z(m)}:${z(sc)}`}
 function render(){
  clearInterval(timer);
+ if(!ACC){renderPicker();return}
  const sk=SK.find(k=>k.id==S.skin&&unl(k))||SK[0],rt=document.documentElement;rt.dataset.skin=sk.id;if(SKST.dataset.i!=sk.id){SKST.textContent=sk.id=='mono'?'':skinCss(sk);SKST.dataset.i=sk.id}if(sk.fx)rt.dataset.fx=sk.id;else delete rt.dataset.fx;rt.dataset.dd=S.nodd?'off':'on';
  const g=!!S.goal,xi=xpInfo(),act=t=>t==tab?'on':'',ch=LT!==(g?tab:'_');LT=g?tab:'_';$('main').classList.toggle('na',!ch);
  $('#ttl').textContent=g?({plan:'Today',stats:'Stats',rewards:'Rewards',me:'Me'}[tab]||'Today'):'RunQuest';
@@ -424,41 +402,53 @@ document.addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;const d=b.dataset;snd(d.km||d.lv||d.feel||d.wk!==undefined?'sel':'c');
  if(d.snd){S.mute=!S.mute;save();rr();snd('c');return}
  if(d.close)closeSheet();
- else if(d.sheet){if(d.sheet=='log'){F.pre=d.a||'';F.prem='';F.pred=''}if(d.sheet=='goal'&&S.goal){F.km=S.goal.km;F.lv=S.goal.lv;F.tEd=1}openSheet(d.sheet,d.a)}
+ else if(d.sheet){if(d.sheet=='log'){F.pre=d.a||'';F.prem='';F.pred=''}if(d.sheet=='goal'&&S.goal){F.km=S.goal.km;F.lv=S.goal.lv;F.tEd=1;F.rpw=baseOf().rpw;F.gd=[...(S.avd||OD)]}if(d.sheet=='avail'){AVO=+d.a||0;AVT=[...availFor(AVO)];AVE=1}openSheet(d.sheet,d.a)}
  else if(d.tab){if(d.tab=='log'){F.pre='';F.prem='';F.pred='';openSheet('log')}else{tab=d.tab;scrollTo(0,0);render()}}
  else if(d.welcome){S.seen=1;save();render()}
  else if(d.suggest){F.tEd=0;sugFill()}
- else if(d.km){F.km=+d.km;$('#km').value=d.km;if(!F.tEd)sugFill();document.querySelectorAll('[data-km]').forEach(c=>c.classList.toggle('on',c==b))}
+ else if(d.km){F.km=+d.km;$('#km').value=d.km;if(!F.tEd)sugFill();updFeas();document.querySelectorAll('[data-km]').forEach(c=>c.classList.toggle('on',c==b))}
  else if(d.lv){F.lv=d.lv;{const e=$('#lvd');if(e)e.textContent=LVD[d.lv];if(!F.tEd)sugFill()}document.querySelectorAll('[data-lv]').forEach(c=>c.classList.toggle('on',c==b))}
  else if(d.feel){F.feel=+d.feel;document.querySelectorAll('[data-feel]').forEach(c=>c.classList.toggle('on',c==b))}
  else if(b.id=='setg'){
-  const km=+$('#km').value,min=(+$('#th').value||0)*60+(+$('#tm').value||0),date=$('#dt').value,age=+$('#age').value||25;
+  const km=+$('#km').value,min=(+$('#th').value||0)*60+(+$('#tm').value||0),date=$('#dt').value,age=+$('#age').value||25,f=readForm();
   if(!km||!min||!date)return;
-  S.goal={km,min,date,age,lv:F.lv,start:S.goal?.start||iso(new Date())};S.ai=null;save();closeSheet();tab='plan';snd('ok');render();
+  if(+P(date)<Date.now()+6*dayN){toast('Pick a race day at least a week away');return}
+  const pc=min*60/km;if(pc<150||pc>720){toast('Check your goal time');return}
+  const B2={rpw:F.rpw|0,longest:f.B.longest,pace:f.B.pace,start:S.base?S.base.start:iso(new Date())};
+  S.base=B2;S.avd=F.gd&&F.gd.length?[...F.gd]:[...OD];S.goal={km,min,date,age,lv:lvOf(B2),start:S.goal?S.goal.start:iso(new Date())};S.ai=null;S.rb={week:aKey(0),from:iso(new Date())};save();closeSheet();tab='plan';snd('ok');render();
  }
  else if(b.id=='addr'){
   const km=+$('#rk').value,min=+$('#rm').value,dt=$('#rd').value;if(!km||!min||!dt)return;
   const t0=xpTot(),L0=xpInfo().L,bn=F.bonus;S.runs.push({id:Date.now(),d:dt,km,min,feel:F.feel,bonus:bn?1:0,src:F.src||0});S.ai=null;F.pre='';F.prem='';F.pred='';F.src=0;F.bonus=0;SCN={st:'idle',msg:''};save();closeSheet();gain(xpTot()-t0,L0);mikeRun(S.runs[S.runs.length-1]);
  }
  else if(d.del){S.runs=S.runs.filter(r=>r.id!=d.del);save();closeSheet();render()}
+ else if(d.rpw!==undefined){F.rpw=+d.rpw;document.querySelectorAll('[data-rpw]').forEach(c=>c.classList.toggle('on',c==b));if(!F.tEd)sugFill();updFeas()}
+ else if(d.gday){F.gd=F.gd.includes(d.gday)?F.gd.filter(z=>z!=d.gday):[...F.gd,d.gday];b.classList.toggle('on');b.setAttribute('aria-pressed',F.gd.includes(d.gday))}
+ else if(d.fday){$('#dt').value=d.fday;updFeas()}
+ else if(d.acc){openAcc(d.acc)}
+ else if(d.exit){exitAcc()}
+ else if(d.newacc){newAcc(($('#nn').value||'').trim())}
+ else if(d.skip){LS.set('rq.skip',LS.get('rq.skip')=='1'?'0':'1');render()}
+ else if(d.avt){AVT=AVT.includes(d.avt)?AVT.filter(z=>z!=d.avt):[...AVT,d.avt];b.classList.toggle('on');b.setAttribute('aria-pressed',AVT.includes(d.avt))}
+ else if(d.ave){AVE=AVE?0:1;b.classList.toggle('on');b.setAttribute('aria-checked',!!AVE)}
+ else if(d.avapply){if(!AVT.length){toast('Pick at least one day');return}S.av=S.av||{};if(AVE){S.avd=[...AVT];delete S.av[aKey(AVO)]}else S.av[aKey(AVO)]=[...AVT];S.ai=null;if(!AVO)S.rb={week:aKey(0),from:iso(new Date())};save();closeSheet();render();toast('Schedule rebuilt')}
  else if(d.prestige){doPrestige()}
  else if(b.id=='pvx'){const o=$('#pv');if(o.dataset.skin){S.skin=o.dataset.skin;save()}o.remove();snd('ok');render()}
  else if(d.em){S.prof={...prof(),e:d.em,pic:''};save();rr()}
  else if(d.cl){S.prof={...prof(),c:d.cl};save();rr()}
  else if(d.nopic){S.prof={...prof(),pic:''};save();rr()}
  else if(d.gc){try{window.open('https://connect.garmin.com/modern/activities','_blank','noopener')}catch(e){}}
- else if(d.do){const k=d.do;if(k=='runs'){S.runs=[];S.rests=[];S.bx=0;S.q={};S.pr=[];S.ai=null}else if(k=='prof'){S.prof=null;S.skin=''}else{const m=S.mute;S=def();S.mute=m;F={km:21.1,lv:'m',feel:3};tab='plan'}save();closeSheet();snd('ok');render()}
+ else if(d.do){const k=d.do;if(k=='acc'){closeSheet();delAcc(ACC);return}if(k=='runs'){S.runs=[];S.rests=[];S.bx=0;S.q={};S.pr=[];S.ai=null}else if(k=='prof'){S.prof=null;S.skin=''}else{const m=S.mute;S=def();S.mute=m;F=FDEF();tab='plan'}save();closeSheet();snd('ok');render()}
  else if(d.dd){S.nodd=!S.nodd;save();render()}
  else if(d.bonus){F.bonus=F.bonus?0:1;b.classList.toggle('on');b.setAttribute('aria-checked',!!F.bonus)}
  else if(d.wk!==undefined){wkv=+d.wk;render()}
- else if(d.av){const k=iso(new Date(+ws0(new Date())+wkv*WK));S.av=S.av||{};let a=S.av[k]||plan(wkv).d.slice();a=a.includes(d.av)?a.filter(z=>z!=d.av):[...a,d.av];if(a.length){S.av[k]=a;S.ai=null;save()}render()}
  else if(d.rest){const td=iso(new Date());S.rests=S.rests||[];if(!S.rests.includes(td)){const t0=xpTot(),L0=xpInfo().L;S.rests.push(td);save();gain(xpTot()-t0,L0);mikeRest()}}
  else if('skin' in d){if(d.skin){S.skin=d.skin;save();snd('ok');render()}}
  else if(b.id=='ovx'){const o=$('#ov');if(o.dataset.skin){S.skin=o.dataset.skin;save()}o.remove();snd('ok');render()}
  else if(b.id=='ai')askAI(b);
 });
 document.addEventListener('change',e=>{const t=e.target;if(t.id=='imp')imp(t.files);else if(t.id=='shot')scan(t.files[0]);else if(t.id=='pp')pic(t.files[0]);else if(t.id=='pn'){S.prof={...prof(),name:t.value.trim()||'Runner'};save();render()}});
-document.addEventListener('input',e=>{const i=e.target.id;if(i=='th'||i=='tm')F.tEd=1});
+document.addEventListener('input',e=>{const i=e.target.id;if(i=='th'||i=='tm')F.tEd=1;if(['km','dt','bl','bpm','bps'].includes(i)){if(!F.tEd&&i!='dt')sugFill();updFeas()}});
 document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer&&e.dataTransfer.files.length&&S.goal)imp(e.dataTransfer.files)});
 let TY=null;
 document.addEventListener('touchstart',e=>{if(e.target.closest('.gr'))TY=e.touches[0].clientY},{passive:true});
@@ -478,10 +468,11 @@ function sTerm(k){const h=HELP[k]||['',''];return`<button class="lnk" data-sheet
 const sw=(on,at,lab)=>`<button class="sw ${on?'on':''}" ${at} role="switch" aria-checked="${!!on}" aria-label="${lab}"><i></i></button>`;
 const SUG=(k,lv)=>Math.round(k*{b:7.5,m:6.25,a:5}[lv]*Math.pow(k/5,.06));
 function sugFill(){const t=SUG(+$('#km').value||F.km,F.lv);$('#th').value=Math.floor(t/60);$('#tm').value=t%60}
-const RT={Easy:'Easy run',Tempo:'Steady run',Long:'Long run',Intervals:'Fast repeats',Fartlek:'Speed play',Recovery:'Gentle jog'};
+const RT={'Walk-run':'Run-walk',Easy:'Easy run',Tempo:'Steady run',Long:'Long run',Intervals:'Fast repeats',Fartlek:'Speed play',Recovery:'Gentle jog'};
 const tn=t=>RT[t]||t;
-const TIP=t=>({Easy:'A relaxed pace. You should be able to chat.'+(S.goal&&S.goal.lv=='b'?' Walk breaks are fine.':''),Tempo:'Comfortably hard. You can only say short sentences.',Long:'Slow and steady. Take water with you.',Intervals:'Short fast bursts with easy jogging or walking in between.',Fartlek:'Mix fast and slow stretches however you like.',Recovery:'Very easy and short. Almost a walk.'})[t]||'';
+const TIP=t=>({'Walk-run':'Alternate easy running and walking. You should be able to chat the whole time.',Easy:'A relaxed pace. You should be able to chat.'+(S.goal&&S.goal.lv=='b'?' Walk breaks are fine.':''),Tempo:'Comfortably hard. You can only say short sentences.',Long:'Slow and steady. Take water with you.',Intervals:'Short fast bursts with easy jogging or walking in between.',Fartlek:'Mix fast and slow stretches however you like.',Recovery:'Very easy and short. Almost a walk.'})[t]||'';
 const HELP={
+ plan:['How your plan is built','You tell RunQuest how much you run now, then the plan builds from there: weekly distance grows by about 10% at most, every 4th week is lighter, and your longest run grows slowly. New runners start with run-walk sessions. Paces come from your recent runs and how hard they felt, so one fast short run will not change much. When you change the days you can run, the whole week is rebuilt with rest around harder runs.'],
  runs:['Run types','Easy run: a relaxed pace where you can chat. Most of your running should feel like this.\nSteady run: comfortably hard. You can only say short sentences.\nLong run: your longest run of the week. Go slow and steady.\nFast repeats: short fast bursts with easy jogging or walking in between.\nSpeed play: mix fast and slow stretches however you like.\nGentle jog: very easy and short.'],
  pace:['Pace','Pace is how many minutes one kilometre takes you. A pace of 7:30 means 7 minutes 30 seconds per kilometre. A bigger number is slower.'],
  goalcheck:['Goal check','Compares your goal time with an estimate of what you could run today, based on your best recent run. Comfortable means you are ahead. Realistic means you are on track. Ambitious means you will need to improve.'],
@@ -492,25 +483,12 @@ const HELP={
  rest:['Rest days','Your body gets stronger while you rest. Take a rest day when you feel very tired or sore, and after a long or hard run.']
 };
 function sHelp(){return`<h2>Guide</h2><div class="sh">How it works</div><div class="grp"><div class="rw2"><div class="hp">1. Set a goal: a distance and a time you want to reach.\n2. Follow your weekly plan on the Today tab.\n3. Tap + after each run to save it. Type it in${HAS()?', or scan a screenshot from your watch or running app':''}.\n4. Each week's plan adapts to what you really ran.</div></div></div><div class="sh">Good to know</div><div class="grp"><div class="rw2"><div class="hp">Start easy. Most runs should feel comfortable.\nWalk breaks are fine.\nMissed a run? Carry on. The plan adjusts.\nStop and rest if something hurts. RunQuest is not medical advice.\nYour data is saved on this device only.</div></div></div><div class="sh">Glossary</div><div class="grp">${Object.keys(HELP).map(k=>`<button class="rw2 b" data-sheet="term" data-a="${k}"><span class="rt">${HELP[k][0]}</span>${I('chev',16,2.2)}</button>`).join('')}</div>`}
-function goalForm(sh){
- const g=S.goal||{},d=new Date();d.setDate(d.getDate()+84);const t=g.min||SUG(F.km,F.lv);
- return`<h2 class="wh">${sh?'Your goal':'Set your goal'}</h2><div class="sh">How far?</div>${seg([[5,'5K'],[10,'10K'],[21.1,'Half'],[42.2,'Marathon']],F.km,'data-km')}<div class="grp"><label class="rw2"><span class="rt">Distance</span><input id="km" type="number" step="0.1" inputmode="decimal" value="${F.km}"><u>km</u></label><div class="rw2"><span class="rt">Goal time</span><input id="th" type="number" inputmode="numeric" value="${Math.floor(t/60)}" style="max-width:52px" aria-label="Hours"><u>h</u><input id="tm" type="number" inputmode="numeric" value="${t%60}" style="max-width:52px" aria-label="Minutes"><u>min</u></div><button class="rw2 b" data-suggest="1">${I('spark',18)}<span class="rt">Use a suggested time</span></button><label class="rw2"><span class="rt">Race day</span><input id="dt" type="date" value="${g.date||iso(d)}"></label><label class="rw2"><span class="rt">Your age</span><input id="age" type="number" inputmode="numeric" value="${g.age||25}"></label></div><div class="sh">Your level</div>${seg([['b','Beginner'],['m','Medium'],['a','Advanced']],F.lv,'data-lv')}<div class="msg" id="lvd">${LVD[F.lv]}</div><button class="btn" id="setg" style="margin-top:18px">${S.goal?'Save':'Build my plan'}</button>`;
-}
 function sLog(){
  return`<h2>Log a run</h2>${!HAS()?'':SCN.st=='busy'?'<div class="shim">Reading your run…</div>':`<label class="scanb">${I('scan',22)}<span>Scan a screenshot</span><input id="shot" type="file" accept="image/*" hidden></label>`}${SCN.msg?`<div class="msg">${esc(SCN.msg)}</div>`:''}<div class="sh">${HAS()?'Or type it in':'Your run'}</div><div class="grp"><label class="rw2"><span class="rt">Date</span><input id="rd" type="date" value="${esc(F.pred||iso(new Date()))}"></label><label class="rw2"><span class="rt">Distance</span><input id="rk" type="number" step="0.01" inputmode="decimal" placeholder="5.2" value="${esc(F.pre||'')}"><u>km</u></label><label class="rw2"><span class="rt">Time</span><input id="rm" type="number" step="0.1" inputmode="decimal" placeholder="32" value="${esc(F.prem||'')}"><u>minutes</u></label></div><div class="sh">How did it feel?</div>${seg([[1,'Easy'],[3,'Good'],[5,'Hard']],F.feel,'data-feel')}<div class="grp"><div class="rw2"><span class="rt">Extra run (2x XP)</span>${sw(F.bonus,'data-bonus="1"','Extra run')}</div></div><button class="btn" id="addr">Save run</button><div class="grp" style="margin-top:20px"><label class="rw2 b">${I('arrow',18)}<span class="rt">Import from a Garmin file</span><input id="imp" type="file" accept=".csv,.gpx,.tcx" multiple hidden></label></div>`;
 }
 function sRun(id){
  const r=S.runs.find(x=>x.id==id);if(!r)return'';
  return`<h2>${P(r.d).toLocaleDateString('en',{weekday:'long',day:'numeric',month:'long'})}</h2><div class="big" style="margin-bottom:14px">${r.km} km</div><div class="grp"><div class="rw2"><span class="rt">Time</span><b>${fS(r.min)}</b></div><div class="rw2"><span class="rt">Pace</span><b>${fP(r.min*60/r.km)}</b></div><div class="rw2"><span class="rt">Felt</span><b>${{1:'Easy',3:'Good',5:'Hard'}[r.feel]||'Good'}</b></div></div><div class="grp"><button class="rw2 b dng" data-del="${r.id}">${I('trash',18)}<span class="rt">Delete run</span></button></div>`;
-}
-function todayCard(ss){
- const ws=ws0(new Date()),x=ss.find(q=>q.day==DAYS[new Date().getDay()]),nx=ss.find(q=>!isDone(q)),rd=(S.rests||[]).includes(iso(new Date())),dn=x&&isDone(x),rs=runsIn(ws),p=plan(0);
- const m=x?(dn?`<div class="big">Well done</div><div class="mut">Today's run is saved.</div>`:`<div class="big">${esc(x.km)} km</div><div class="mut"><b>${esc(tn(x.type))}</b> · pace ${esc(x.pace)}</div><div class="tip">${esc(TIP(x.type))}</div>`):`<div class="big">Rest day</div><div class="mut">${nx?'Next run: '+esc(nx.day+', '+nx.km+' km'):'Your week is done. Great work.'}</div>`;
- return`<div class="card hero"><div class="top"><div><span class="lbl">Today</span>${m}</div><div style="text-align:right"><span class="lbl">Race day in</span><div class="cd" id="cd"></div></div></div><div class="hstats"><div><b>${sum(rs).toFixed(1)} / ${p.v}</b><span>km this week</span></div><div><b>${rs.length}</b><span>runs this week</span></div></div><div class="row">${x&&!dn?`<button class="btn" data-sheet="log" data-a="${esc(x.km)}">Log my run</button>`:''}${rd?'':`<button class="btn ghost" data-rest="1">Take a rest day</button>`}</div></div>`;
-}
-function planView(){
- const p=plan(wkv),ws=ws0(new Date()),ai=!wkv&&S.ai&&S.ai.week==iso(ws)?S.ai:null,ss=ai?ai.s:p.s;
- return`${wkv?'':startCard()+pBanner()+todayCard(ss)}${seg([[0,'This week'],[1,'Next week']],wkv,'data-wk')}<div class="sh">${wkv?'Next week':'This week'} · ${p.v} km planned</div><div class="grp">${ss.map(x=>{const dn=!wkv&&isDone(x);return`<button class="rw2 b ${dn?'done':''}" ${wkv?'':`data-sheet="log" data-a="${esc(x.km)}"`}><span class="dy">${esc(x.day)}</span><span class="rt"><b>${esc(tn(x.type))}</b><small>Pace ${esc(x.pace)}</small></span><span class="rr">${dn?I('check',18,2.4):esc(x.km)+' km'}</span></button>`}).join('')}</div><button class="rw2 b grpb" data-sheet="term" data-a="runs">${I('info',18)}<span class="rt">What do these runs mean?</span>${I('chev',16,2.2)}</button><div class="sh">Days you can run</div><div class="dayrow">${OD.map(z=>`<button class="${p.d.includes(z)?'on':''}" aria-label="${z}" aria-pressed="${p.d.includes(z)}" data-av="${z}">${z.slice(0,2)}</button>`).join('')}</div>${wkv||!HAS()?'':`<button class="rw2 b grpb" id="ai">${I('spark',18)}<span class="rt">Adjust plan with AI</span>${ai?I('check',18,2.4):''}</button>`}`;
 }
 function statsView(){
  const ws=ws0(new Date()),rl=realism(),wk=[...Array(8)].map((_,i)=>sum(runsIn(new Date(+ws-(7-i)*WK)))),mx=Math.max(...wk,1),rs=[...S.runs].sort((a,c)=>c.d.localeCompare(a.d)).slice(0,10),lg=S.runs.reduce((a,q)=>Math.max(a,q.km),0);
@@ -559,10 +537,195 @@ function rewardsView(){
 }
 function meView(){
  const xi=xpInfo(),p=prof(),mk=[...(S.mk||[])].reverse().slice(0,5);
- return`<button class="card prof" data-sheet="avatar">${av(p,xi.L,60)}<div class="pt"><b>${esc(p.name)}</b><span>${xi.pc?'Prestige '+ROM[xi.pc]+' · ':''}${title(xi.L)}</span></div>${I('chev',18,2.2)}</button><div class="sh">Mike</div><div class="grp">${mk.length?mk.map(m=>`<div class="rw2"><span class="ri" style="background:#34c759">${I('bot',17,2)}</span><span class="rt"><b>${m.km} km · ${fS(m.t)}</b><small>${esc(m.msg)}</small></span><span class="rr">${ago(m.ts)}</span></div>`).join(''):`<div class="rw2"><span class="ri" style="background:#34c759">${I('bot',17,2)}</span><span class="rt">Mike will message you after your first run.</span></div>`}</div><div class="sh">Help</div><div class="grp"><button class="rw2 b" data-sheet="help"><span class="ri" style="background:#007aff">${I('info',17,2)}</span><span class="rt">Guide &amp; glossary</span>${I('chev',16,2.2)}</button><button class="rw2 b" data-sheet="intro"><span class="ri" style="background:#5856d6">${I('play',17,2)}</span><span class="rt">Replay intro</span>${I('chev',16,2.2)}</button></div><div class="sh">Settings</div><div class="grp"><div class="rw2"><span class="ri" style="background:#ff9500">${I('vol',17,2)}</span><span class="rt">Sounds</span>${sw(!S.mute,'data-snd="1"','Sounds')}</div><div class="rw2"><span class="ri" style="background:#af52de">${I('spark',17,2)}</span><span class="rt">Background icons</span>${sw(!S.nodd,'data-dd="1"','Background icons')}</div><button class="rw2 b" data-sheet="goal"><span class="ri" style="background:#34c759">${I('flag',17,2)}</span><span class="rt">Goal</span><span class="rr">${S.goal.km} km</span>${I('chev',16,2.2)}</button></div><div class="grp"><button class="rw2 b dng" data-sheet="confirm" data-a="runs"><span class="rt">Reset runs &amp; XP</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="prof"><span class="rt">Reset profile</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="all"><span class="rt">Reset everything</span></button></div>`;
+ return`<button class="card prof" data-sheet="avatar">${av(p,xi.L,60)}<div class="pt"><b>${esc(p.name)}</b><span>${xi.pc?'Prestige '+ROM[xi.pc]+' · ':''}${title(xi.L)}</span></div>${I('chev',18,2.2)}</button><div class="sh">Mike</div><div class="grp">${mk.length?mk.map(m=>`<div class="rw2"><span class="ri" style="background:#34c759">${I('bot',17,2)}</span><span class="rt"><b>${m.km} km · ${fS(m.t)}</b><small>${esc(m.msg)}</small></span><span class="rr">${ago(m.ts)}</span></div>`).join(''):`<div class="rw2"><span class="ri" style="background:#34c759">${I('bot',17,2)}</span><span class="rt">Mike will message you after your first run.</span></div>`}</div><div class="sh">Help</div><div class="grp"><button class="rw2 b" data-sheet="help"><span class="ri" style="background:#007aff">${I('info',17,2)}</span><span class="rt">Guide &amp; glossary</span>${I('chev',16,2.2)}</button><button class="rw2 b" data-sheet="intro"><span class="ri" style="background:#5856d6">${I('play',17,2)}</span><span class="rt">Replay intro</span>${I('chev',16,2.2)}</button></div><div class="sh">Settings</div><div class="grp"><div class="rw2"><span class="ri" style="background:#ff9500">${I('vol',17,2)}</span><span class="rt">Sounds</span>${sw(!S.mute,'data-snd="1"','Sounds')}</div><div class="rw2"><span class="ri" style="background:#af52de">${I('spark',17,2)}</span><span class="rt">Background icons</span>${sw(!S.nodd,'data-dd="1"','Background icons')}</div><button class="rw2 b" data-sheet="goal"><span class="ri" style="background:#34c759">${I('flag',17,2)}</span><span class="rt">Goal</span><span class="rr">${S.goal.km} km</span>${I('chev',16,2.2)}</button><button class="rw2 b" data-exit="1"><span class="ri" style="background:#5856d6">${I('me',17,2)}</span><span class="rt">Switch runner</span>${I('chev',16,2.2)}</button></div><div class="grp"><button class="rw2 b dng" data-sheet="confirm" data-a="runs"><span class="rt">Reset runs &amp; XP</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="prof"><span class="rt">Reset profile</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="all"><span class="rt">Reset everything</span></button><button class="rw2 b dng" data-sheet="confirm" data-a="acc"><span class="rt">Delete this runner</span></button></div>`;
 }
 document.addEventListener('keydown',e=>{if(e.key=='Tab')document.body.classList.add('kb')});
 document.addEventListener('pointerdown',()=>document.body.classList.remove('kb'));
 
-render();
+/* ---------- accounts ---------- */
+function openAcc(id){
+ let d=def();try{d={...def(),...JSON.parse(LS.get('rq.a.'+id)||'{}')}}catch(e){}
+ S=d;ACC=id;LS.set('rq.last',id);_pk='';SKST.dataset.i='';F=FDEF();SCN={st:'idle',msg:''};wkv=0;tab='plan';LT='';closeSheet();render();
+}
+function newAcc(name){
+ const id='a'+Date.now().toString(36)+Math.floor(Math.random()*1e3);
+ S=def();S.prof={name:(name||'Runner').slice(0,20),e:AVS[Math.floor(Math.random()*AVS.length)],c:CL[Math.floor(Math.random()*CL.length)]};
+ ACC=id;LS.set('rq.last',id);_pk='';SKST.dataset.i='';F=FDEF();SCN={st:'idle',msg:''};wkv=0;tab='plan';LT='';save();closeSheet();render();
+}
+function exitAcc(){ACC=null;S=def();closeSheet();render()}
+function delAcc(id){LS.del('rq.a.'+id);AIDX=AIDX.filter(a=>a.id!=id);LS.set('rq.idx',JSON.stringify(AIDX));if(LS.get('rq.last')==id)LS.del('rq.last');ACC=null;S=def();render()}
+function pickerView(){
+ const skip=LS.get('rq.skip')=='1';
+ return`<div class="grp">${AIDX.map(a=>`<button class="rw2 b" data-acc="${a.id}">${av({e:a.e,c:a.c,pic:a.pic,P:a.pc},a.L,48)}<span class="rt"><b>${esc(a.name)}</b><small>${a.g?'Level '+a.L+' · '+a.g+' km goal':'New runner'}</small></span>${I('chev',16,2.2)}</button>`).join('')}<button class="rw2 b" data-sheet="newacc"><span class="ri" style="background:var(--acc);color:var(--on)">${I('plus',17,2.2)}</span><span class="rt"><b>New runner</b></span></button></div>${AIDX.length?`<div class="grp"><div class="rw2"><span class="rt">Open the last runner automatically</span>${sw(skip,'data-skip="1"','Open the last runner automatically')}</div></div>`:''}`;
+}
+const sNewAcc=()=>`<h2>New runner</h2><div class="grp"><label class="rw2"><span class="rt">Name</span><input id="nn" placeholder="Your name" maxlength="20" autocomplete="off"></label></div><button class="btn" data-newacc="1">Start</button>`;
+function renderPicker(){
+ const rt=document.documentElement;rt.dataset.skin='mono';delete rt.dataset.fx;rt.dataset.dd='off';SKST.textContent='';SKST.dataset.i='';
+ $('#ttl').textContent="Who's running?";$('#nav').style.display='none';$('#nav').innerHTML='';$('#lv').innerHTML='';
+ LT='';$('main').classList.remove('na');$('#v').innerHTML=pickerView();
+}
+/* ---------- coach: fitness, rest, schedule ---------- */
+const dayN=864e5,aKey=off=>iso(new Date(+ws0(new Date())+off*WK)),availFor=off=>((S.av&&S.av[aKey(off)])||S.avd||OD),avl=a=>a.length>=7?'Every day':[...a].sort((x,y)=>OD.indexOf(x)-OD.indexOf(y)).join(', ');
+let AVT=[],AVO=0,AVE=1;
+const applyAI=(wk,ss)=>wk.map(e=>{if(e.kind!='run')return e;const a=ss.find(x=>x.day==e.day);return a?{...e,type:a.type||e.type,km:+a.km||e.km,pace:a.pace||e.pace,desc:a.desc||e.desc}:e});
+function wkRow(e,idx,off){
+ const num=P(e.date).getDate(),td=!off&&e.date==iso(new Date());let title,sub='',right='',cls='rw2 dayr'+(td?' td':''),click=true;
+ if(e.kind=='done'){title='Ran '+(+e.km.toFixed(1))+' km';sub=fP(e.min*60/e.km)+' · '+fS(e.min);right=I('check',18,2.4);cls+=' ok'}
+ else if(e.kind=='run'){title=tn(e.type);sub='Pace '+e.pace;right=e.km+' km'}
+ else if(e.kind=='race'){title='Race day';sub='Goal '+fT(S.goal.min);right=S.goal.km+' km'}
+ else if(e.kind=='missed'){title='Missed run';sub=tn(e.type)+' · '+e.km+' km';click=false;cls+=' rs'}
+ else{title=e.kind=='off'?'Not available':'Rest day';sub=e.past?'No run logged':e.kind=='off'?'':'Recovery';click=false;cls+=' rs'}
+ const inner=`<span class="dn"><b>${e.day}</b><small>${num}</small></span><span class="rt"><b>${title}</b>${sub?`<small>${sub}</small>`:''}</span><span class="rr">${right}</span>`;
+ return click?`<button class="${cls} b" data-sheet="day" data-a="${idx}">${inner}</button>`:`<div class="${cls}">${inner}</div>`;
+}
+function todayCard(e,p){
+ const rd=(S.rests||[]).includes(iso(new Date())),nx=p.wk.find(x=>x.kind=='run'&&x.date>iso(new Date()));
+ const m=e&&e.kind=='done'?`<div class="big">Well done</div><div class="mut">${+e.km.toFixed(1)} km logged today.</div>`:e&&e.kind=='run'?`<div class="big">${e.km} km</div><div class="mut"><b>${esc(tn(e.type))}</b> · pace ${esc(e.pace)}</div><div class="tip">${esc(TIP(e.type))}</div>`:e&&e.kind=='race'?`<div class="big">Race day</div><div class="mut">${S.goal.km} km · goal ${fT(S.goal.min)}</div>`:`<div class="big">Rest day</div><div class="mut">${nx?'Next run: '+esc(nx.day+', '+nx.km+' km'):'Nothing left this week. Great work.'}</div>`;
+ return`<div class="card hero"><div class="top"><div><span class="lbl">Today</span>${m}</div><div style="text-align:right"><span class="lbl">Race day in</span><div class="cd" id="cd"></div></div></div><div class="row" style="margin-top:16px">${e&&(e.kind=='run'||e.kind=='race')?`<button class="btn" data-sheet="log" data-a="${esc(e.km)}">Log my run</button>`:''}${rd?'':`<button class="btn ghost" data-rest="1">Take a rest day</button>`}</div></div>`;
+}
+function planView(){
+ const p=plan(wkv),ws=ws0(new Date()),ai=!wkv&&S.ai&&S.ai.week==iso(ws)?S.ai:null,wk=ai?applyAI(p.wk,ai.s):p.wk,te=wkv?null:wk.find(e=>e.date==iso(new Date()));
+ return`${wkv?'':startCard()+pBanner()+todayCard(te,p)}${seg([[0,'This week'],[1,'Next week']],wkv,'data-wk')}<div class="sh">${wkv?'Next week':'This week'} · ${p.v} km</div><div class="grp">${wk.map((e,idx)=>wkRow(e,idx,wkv)).join('')}</div>${p.why.length?`<div class="sh">Plan notes</div><div class="grp">${p.why.slice(0,3).map(w=>`<div class="rw2"><span class="ri" style="background:var(--acc);color:var(--on)">${I('spark',17,2)}</span><span class="rt">${esc(w)}</span></div>`).join('')}</div>`:''}<button class="rw2 b grpb" data-sheet="avail" data-a="${wkv}"><span class="rt"><b>Days you can run</b><small>${avl(p.d)}</small></span>${I('chev',16,2.2)}</button><button class="rw2 b grpb" data-sheet="term" data-a="runs">${I('info',18)}<span class="rt">What do these runs mean?</span>${I('chev',16,2.2)}</button>${wkv||!HAS()?'':`<button class="rw2 b grpb" id="ai">${I('spark',18)}<span class="rt">Adjust plan with AI</span>${ai?I('check',18,2.4):''}</button>`}`;
+}
+function sDay(idx){
+ const p=plan(wkv),e=p.wk[+idx];if(!e)return'';
+ const hd=`<h2>${P(e.date).toLocaleDateString('en',{weekday:'long',day:'numeric',month:'long'})}</h2>`;
+ if(e.kind=='done')return hd+`<div class="big">${+e.km.toFixed(1)} km</div><div class="mut" style="margin:6px 0 14px">${fS(e.min)} · ${fP(e.min*60/e.km)}</div>`;
+ return hd+`<div class="big">${e.km} km</div><div class="mut" style="margin:6px 0 12px"><b>${esc(tn(e.type))}</b> · pace ${esc(e.pace)}</div><div class="grp"><div class="rw2"><div class="hp">${esc(TIP(e.type))}${e.desc?'\n'+esc(e.desc):''}</div></div></div>${e.date<=iso(new Date())?`<button class="btn" data-sheet="log" data-a="${e.km}">Log this run</button>`:''}`;
+}
+function sAvail(){
+ return`<h2>Days you can run</h2><div class="dayrow">${OD.map(z=>`<button class="${AVT.includes(z)?'on':''}" data-avt="${z}" aria-label="${z}" aria-pressed="${AVT.includes(z)}">${z.slice(0,2)}</button>`).join('')}</div><div class="grp"><div class="rw2"><span class="rt">Use every week</span>${sw(AVE,'data-ave="1"','Use every week')}</div></div><button class="btn" data-avapply="1">Rebuild my schedule</button>`;
+}
+
+/* ---------- science-based coach ---------- */
+function FDEF(){return{km:5,lv:'m',feel:3,rpw:0,gd:['Tue','Thu','Sat','Sun']}}
+const timeFromV=(km,V)=>{let lo=km*2,hi=km*16;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(vdotOf(km,m)>V)lo=m;else hi=m}return(lo+hi)/2};
+const vFromEasy=E=>{let lo=15,hi=85;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(pz(m,.68)>E)lo=m;else hi=m}return(lo+hi)/2};
+const BASEDEF={b:{rpw:0,longest:0,pace:450},m:{rpw:2,longest:6,pace:390},a:{rpw:4,longest:12,pace:330}};
+const baseOf=()=>S.base||BASEDEF[(S.goal&&S.goal.lv)||'m']||BASEDEF.m;
+const lvOf=B=>B.rpw==0||B.longest<2?'b':(B.rpw>=3&&B.longest>=10?'a':(B.rpw>=2&&B.longest>=5?'m':'b'));
+const WR=[[1,2,7],[2,2,5],[3,2,4],[4,2,4],[5,2,4],[8,2,3],[12,1,2],[20,0,1],[25,0,1],[30,0,1]];
+const wrKm=(st,E)=>{const[r,w,n]=WR[st-1];return Math.round((r*n*60/E+w*n/12+10/12)*10)/10};
+const wrDesc=st=>{const[r,w,n]=WR[st-1];return w?`Walk 5 min, then ${n} times: run ${r} min and walk ${w} min, then walk 5 min.`:`Walk 5 min, run ${r*n} min easy, walk 5 min.`};
+function easyPace(){
+ const B=baseOf(),now=Date.now();let sw=0,sp=0;
+ S.runs.filter(r=>r.km>=1.5&&r.min>=6&&now-+P(r.d)<56*dayN).forEach(r=>{const p=r.min*60/r.km,adj=p*({1:.97,3:1,5:1.1}[r.feel]||1),w=Math.min(r.km,8)*Math.min(1,r.km/5);sw+=w;sp+=w*adj});
+ const bw=Math.max(1,12-sw*.25),E=(B.pace*bw+sp)/(bw+sw),n=S.runs.filter(r=>r.km>=1.5&&r.min>=6&&now-+P(r.d)<56*dayN).length;return Math.max(E,B.pace*(1-Math.min(.25,.03*n)));
+}
+function feasWeeks(km,B){
+ const Lp=km<=5?5:km<=10?9:km<=21.1?17:31,Vp=Lp/.45;let L=B.longest||0,w=0,v=L>0?Math.max(B.rpw*L*.7,L*1.2):0;
+ if(L<3.5){const s0=L<.5?1:Math.min(7,Math.round(L*2)+1);w+=Math.max(0,10-s0);L=3.5;v=Math.max(v,8.75)}
+ while((L<Lp||v<Vp)&&w<120){L=Math.min(Lp,L*1.1+(L<8?.4:0));v=Math.min(Vp,v<15?v+Math.max(1.5,v*.1):v*1.1);w++;if(w%4==0)w++}
+ return w+(km<=10?1:2);
+}
+function readForm(){
+ const q=id=>{const e=$('#'+id);return e&&e.value!==undefined?e.value:''};
+ return{km:+q('km')||F.km,date:q('dt')||iso(new Date(Date.now()+112*dayN)),B:{rpw:F.rpw|0,longest:+q('bl')||0,pace:((+q('bpm')||7)*60+(+q('bps')||0))||450}};
+}
+function feasText(f){
+ f=f||readForm();const wl=Math.floor((+P(f.date)-+new Date(new Date().setHours(0,0,0,0)))/(7*dayN)),need=feasWeeks(f.km,f.B);
+ if(wl<1)return'Pick a race day at least a week away.';
+ if(wl>=need)return`On track: ${wl} weeks is enough to build up safely.`;
+ const d=new Date(Date.now()+(need+1)*7*dayN);
+ return`From where you are now this distance needs about ${need} weeks. You have ${wl}. Pick a later race day or a shorter distance. <button class="lnk" data-fday="${iso(d)}">Use ${d.toLocaleDateString('en',{day:'numeric',month:'short'})}</button>`;
+}
+const updFeas=()=>{const e=$('#gw');if(e)e.innerHTML=feasText()};
+function sugFill(){const f=readForm(),wl=Math.max(0,(+P(f.date)-Date.now())/(7*dayN)),t=Math.round(timeFromV(f.km,vFromEasy(f.B.pace))*(1-Math.min(.08,.004*wl)));$('#th').value=Math.floor(t/60);$('#tm').value=t%60}
+function realism(){
+ if(!S.runs.length)return null;
+ const g=S.goal,wl=Math.max(0,(+P(g.date)-Date.now())/(7*dayN)),pr=timeFromV(g.km,vFromEasy(easyPace()))*(1-Math.min(.1,.004*wl)),q=g.min/pr;
+ return{pr,t:q<.93?'Ambitious: needs real progress':q<=1.07?'Realistic':'Comfortable'};
+}
+function fatigue(d0){
+ const t0=d0?+d0:+new Date(new Date().setHours(0,0,0,0)),ld=days=>S.runs.filter(r=>{const t=+P(r.d);return t<=t0&&t>t0-days*dayN}).reduce((a,r)=>a+r.km*(.6+r.feel*.2),0);
+ const rs=S.runs.filter(r=>+P(r.d)<=t0).sort((a,b)=>b.d.localeCompare(a.d)),last=rs[0],ds=last?Math.round((t0-+P(last.d))/dayN):99;
+ const ac=ld(7),ch=ld(28)/4,acwr=ch>0?ac/ch:1,hardN=rs.filter(r=>t0-+P(r.d)<7*dayN&&r.feel==5).length;
+ let sc=0;if(ch>0&&acwr>1.15)sc+=Math.min(40,(acwr-1.15)*80);sc+=Math.min(30,hardN*10);
+ if(last&&ds<=1)sc+=Math.min(25,last.km*(.6+.2*last.feel)*1.2);
+ let run=0;for(let k=1;k<=6;k++){if(rs.some(r=>Math.round((t0-+P(r.d))/dayN)==k))run++;else break}if(run>2)sc+=(run-2)*8;
+ const a=S.goal.age;sc*=a>55?1.3:a>40?1.15:1;if(S.goal.lv=='b')sc*=1.1;
+ return{s:Math.min(100,Math.round(sc)),last,ds,acwr,hardN,run};
+}
+function pickDays(c,n,strict){
+ if(n<=0)return[];
+ if(n>=c.length){if(!strict)return[...c];const o=[];c.forEach(d=>{if(!o.length||d-o[o.length-1]>1)o.push(d)});return o}
+ let best=c.slice(0,n),bs=-1e9;
+ const test=u=>{let s=0;for(let i=1;i<u.length;i++){const d=u[i]-u[i-1];s+=d==1?(strict?-14:-4):Math.min(d,3)*2}if(u.some(x=>x>=5))s+=4;if(s>bs){bs=s;best=[...u]}};
+ const go=(st,u)=>{if(u.length==n){test(u);return}for(let i=st;i<c.length;i++){u.push(c[i]);go(i+1,u);u.pop()}};
+ go(0,[]);return best;
+}
+function wrStage(i){
+ const L0=baseOf().longest,s0=L0<.5?1:Math.min(7,Math.round(L0*2)+1);let d=0;
+ for(let k=0;k<i;k++)if(runsIn(new Date(+ws0(P(S.goal.start))+k*WK)).length>=2)d++;
+ return s0+d;
+}
+function plan(off=0){
+ const g=S.goal,B=baseOf(),n=total(),i=Math.min(cur()+off,n-1),why=[],now=new Date(),t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()),wsN=ws0(now),ws=new Date(+wsN+off*WK),tIso=iso(t0),lv=g.lv,pkV=peak(g);
+ const gs=P(g.start),rbk=!off&&S.rb&&S.rb.week==aKey(0)?P(S.rb.from):null;
+ let pf=+ws;if(!off){pf=Math.max(pf,+gs);if(rbk)pf=Math.max(pf,+rbk)}
+ const dbf=!off?sum(S.runs.filter(r=>{const t=+P(r.d);return t>=+ws&&t<pf})):0;
+ const wsince=Math.max(0,Math.floor((+wsN-+ws0(gs))/WK)),E=easyPace(),V=Math.max(20,Math.min(75,vFromEasy(E)));
+ const wkk=k=>sum(runsIn(new Date(+wsN-k*WK))),cn=k=>runsIn(new Date(+wsN-k*WK)).length;
+ const rec=S.runs.filter(r=>{const d=+wsN-+P(r.d);return d>0&&d<=28*dayN}),recL=rec.reduce((a,r)=>Math.max(a,r.km),0),lg=Math.max(recL,wsince<3?B.longest:B.longest*.6);
+ const bv=B.longest>0?Math.max(B.rpw*B.longest*.7,B.longest*1.2):0,anchor=rec.length>=2?Math.max(wkk(1),Math.max(wkk(2),wkk(3))*.92):Math.max(wkk(1),wkk(2),wkk(3),bv*Math.max(.4,1-wsince*.2));
+ const tv=(h,idx)=>{const tr=n-1-idx;let v;if(tr<=0)v=h*.5;else if(tr==1)v=h*.75;else if((idx+1)%4==0)v=h*.82;else v=h<15?h+Math.max(1.5,h*.1):h*1.1;return Math.min(v,pkV)};
+ const FT=off?{s:0,last:null,ds:99}:fatigue(ws),FN=off?null:fatigue();
+ const rdt=P(g.date),rIdx=Math.round((+rdt-+ws)/dayN),raceHere=rIdx>=0&&rIdx<7&&+rdt>=+t0;
+ const av=[...availFor(off)].sort((a,b)=>OD.indexOf(a)-OD.indexOf(b)),tIdx=Math.round((+t0-+ws)/dayN);
+ let cand=OD.map((nm,k)=>av.includes(nm)?k:-1).filter(k=>k>=0&&+new Date(+ws+k*dayN)>=pf&&!(raceHere&&k>=rIdx-1));
+ const strict=lv=='b'||g.age>=45||FT.s>=55,cantRun=!(B.longest>=3.5||recL>=5)&&wrStage(Math.min(cur(),n-1))<=10;
+ let sess=[];
+ if(cantRun){
+  const st=Math.min(10,off?wrStage(cur())+1:wrStage(i)),days=pickDays(cand,Math.min(3,cand.length),true).sort((a,b)=>a-b),km=wrKm(st,E),desc=wrDesc(st);
+  sess=days.map(d=>({idx:d,day:OD[d],type:'Walk-run',km,pace:fP(E),desc}));
+  why.push(`Run-walk plan, step ${st} of 10. Do 2 or more sessions a week to move up.`);
+ }else{
+  let h=Math.max(off?Math.max(anchor,tv(anchor,cur())):anchor,lg*1.2);
+  if(!off&&S.runs.some(r=>+P(r.d)<+wsN)&&!S.runs.some(r=>+wsN-+P(r.d)<14*dayN&&+P(r.d)<+wsN)){h*=.6;why.push('You took a break, so we restart gently.')}
+  let v=tv(h,i);const tr=n-1-i;
+  if(tr<=0&&n>2)why.push('Race week: short easy runs to stay fresh.');else if(tr==1&&n>3)why.push('Taper week: less distance, same sharpness.');else if((i+1)%4==0)why.push('Cut-back week: lighter so your body can adapt.');else why.push('Weekly distance grows by about 10% at most.');
+  if(FT.s>=75){v*=.75;why.unshift('Your legs look very tired, so this week is lighter with extra rest.')}else if(FT.s>=55){v*=.88;why.unshift('Recent runs were hard, so the week is a little lighter.')}
+  const rpwR=rec.length>=3?(cn(1)+cn(2)+cn(3))/3:B.rpw,rem=Math.max(0,v-dbf),rem2=raceHere?Math.min(rem,pkV*.3):rem;
+  let nr=Math.min(cand.length,Math.max(2,Math.round(rpwR)+1),{b:4,m:5,a:6}[lv],lg<5?3:lg<10?4:5,Math.floor(rem2/2.5));if(FT.s>=75)nr--;if(g.age>=50)nr=Math.min(nr,4);if(raceHere)nr=Math.min(nr,2);nr=Math.max(0,nr);
+  const lgoal=g.km<=5?8:g.km<=10?12:g.km<=21.1?21:32,Lt=Math.min(lg*1.1+.5,lgoal),days=pickDays(cand,nr,strict).sort((a,b)=>a-b),k=days.length;
+  let li=-1;for(let q=k-1;q>=0;q--)if(days[q]>=5){li=q;break}if(li<0)li=k-1;
+  const T=days.map(()=>'Easy');if(k>=2&&!raceHere)T[li]='Long';
+  if(k>=3&&h>=15&&lv!='b'&&FT.s<55&&wsince>=3&&!raceHere){let bq=-1,bd=-1;days.forEach((d,q)=>{if(q==li)return;const dl=Math.abs(d-days[li]),pg=q>0?d-days[q-1]:9,ng=q<k-1?days[q+1]-d:9,sc=Math.min(dl,3)+Math.min(pg,3)+Math.min(ng,3);if(sc>bd){bd=sc;bq=q}});if(bq>=0)T[bq]='Quality'}
+  days.forEach((d,q)=>{if(q>0&&d-days[q-1]==1&&(T[q-1]=='Long'||T[q-1]=='Quality')&&T[q]=='Easy')T[q]='Recovery'});
+  let KM=[];
+  if(k==1)KM=[Math.min(rem2,Lt)];
+  else if(k>=2){let long=Math.min(Lt,rem2*(k>=3?.45:.55));if(FT.s>=55)long*=.85;long=Math.max(2,long);const oth=Math.min(Math.max(2,(rem2-long)/(k-1)),Math.max(3,lg*.9));KM=T.map(t=>t=='Long'?long:oth*(t=='Recovery'?.8:1))}
+  KM=KM.map(x=>Math.max(2,Math.round(x*2)/2));
+  const tm=Math.min(25,10+i),qn=lv=='a'&&i%2?'Intervals':'Tempo',lp=km=>E*1.04+Math.max(0,km-10)*1.5;
+  sess=days.map((d,q)=>{const t=T[q],km=KM[q];let pace,desc,type=t;
+   if(t=='Quality'){type=qn;pace=fP(pz(V,qn=='Tempo'?.86:.97));desc=qn=='Tempo'?`10 min easy · ${tm} min steady hard · 10 min easy`:`${4+Math.min(i,6)}×800 m, 90 s jog between`}
+   else if(t=='Long'){pace=fP(lp(km));desc='Slow and steady, bring water'}
+   else if(t=='Recovery'){pace=fP(E*1.07);desc='Very easy shake-out'}
+   else{pace=fP(E);desc='Conversational pace'}
+   return{idx:d,day:OD[d],type,km,pace,desc}});
+  if(!sess.length&&!raceHere)why.push(cand.length?'This week\'s distance is already done.':'No free days left this week.');
+ }
+ // rest needed today: move today's run after a hard effort
+ if(!off&&FN&&FN.last&&FN.ds<=1&&(FN.last.feel==5||FN.s>=75)&&!S.runs.some(r=>r.d==tIso)){
+  const ti=sess.findIndex(x=>x.idx==tIdx);
+  if(ti>=0){const x=sess.splice(ti,1)[0],j=cand.find(c=>c>tIdx&&!sess.some(q=>q.idx==c||Math.abs(q.idx-c)==1&&strict));if(j!=null){x.idx=j;x.day=OD[j];sess.push(x);sess.sort((a,b)=>a.idx-b.idx)}why.unshift('Rest today after your hard run.')}
+ }
+ const wk=OD.map((nm,idx)=>{const d=new Date(+ws+idx*dayN),ds=iso(d),rs=S.runs.filter(r=>r.d==ds),past=+d<+t0,se=sess.find(x=>x.idx==idx);
+  if(!off&&(past||+d==+t0)&&rs.length)return{day:nm,date:ds,kind:'done',km:sum(rs),min:rs.reduce((a,r)=>a+r.min,0)};
+  if(raceHere&&idx==rIdx)return{day:nm,date:ds,kind:'race',type:'Race',km:g.km,pace:fP(g.min*60/g.km),desc:'Race day. Start steady and finish strong.'};
+  if(se)return{...se,date:ds,kind:past?'missed':'run'};
+  return{day:nm,date:ds,kind:av.includes(nm)?'rest':'off',past:!off&&past};
+ });
+ if(av.length<7&&sess.length)why.unshift('Built around '+avl(av)+'.');
+ why.push('Easy pace is '+fP(E)+', worked out from your runs.');
+ return{v:Math.round((dbf+sum(sess))*2)/2,s:sess.filter(x=>x.idx>=tIdx||off),wk,why,n,i,pk:pkV,d:av,ph:(n-1-i<=1&&n>3?'Taper':i/n<.4?'Base':i/n<.75?'Build':'Peak'),done:off?0:sum(runsIn(ws)),fat:FT.s,mode:cantRun?'wr':'dist',E};
+}
+
+function goalForm(sh){
+ const g=S.goal||{},B=S.base||{longest:0,pace:450},d=new Date();d.setDate(d.getDate()+112);F.rpw=F.rpw??0;F.gd=F.gd||['Tue','Thu','Sat','Sun'];
+ const pace=B.pace||450,pm=Math.floor(pace/60),ps=Math.round(pace%60),t=g.min||Math.round(timeFromV(F.km,vFromEasy(pace))*.95),dt=g.date||iso(d);
+ return`<h2 class="wh">${sh?'Your goal':'Set your goal'}</h2><div class="sh">How far?</div>${seg([[5,'5K'],[10,'10K'],[21.1,'Half'],[42.2,'Marathon']],F.km,'data-km')}<div class="grp"><label class="rw2"><span class="rt">Distance</span><input id="km" type="number" step="0.1" inputmode="decimal" value="${F.km}"><u>km</u></label><div class="rw2"><span class="rt">Goal time</span><input id="th" type="number" inputmode="numeric" value="${Math.floor(t/60)}" style="max-width:52px" aria-label="Hours"><u>h</u><input id="tm" type="number" inputmode="numeric" value="${t%60}" style="max-width:52px" aria-label="Minutes"><u>min</u></div><button class="rw2 b" data-suggest="1">${I('spark',18)}<span class="rt">Use a suggested time</span></button><label class="rw2"><span class="rt">Race day</span><input id="dt" type="date" value="${dt}"></label><label class="rw2"><span class="rt">Your age</span><input id="age" type="number" inputmode="numeric" value="${g.age||25}"></label></div><div class="sh">Your running now</div>${seg([[0,'None'],[1,'1'],[2,'2'],[3,'3'],[4,'4+']],F.rpw,'data-rpw')}<div class="msg" style="margin-top:-6px">Runs per week</div><div class="grp"><label class="rw2"><span class="rt">Longest recent run</span><input id="bl" type="number" step="0.1" inputmode="decimal" placeholder="0" value="${B.longest||''}"><u>km</u></label><div class="rw2"><span class="rt">Usual pace</span><input id="bpm" type="number" inputmode="numeric" value="${pm}" style="max-width:44px" aria-label="Minutes"><u>:</u><input id="bps" type="number" inputmode="numeric" value="${String(ps).padStart(2,'0')}" style="max-width:44px" aria-label="Seconds"><u>/km</u></div></div><div class="sh">Days you can run</div><div class="dayrow">${OD.map(z=>`<button class="${F.gd.includes(z)?'on':''}" data-gday="${z}" aria-label="${z}" aria-pressed="${F.gd.includes(z)}">${z.slice(0,2)}</button>`).join('')}</div><div class="msg" id="gw">${feasText({km:F.km,date:dt,B:{rpw:F.rpw,longest:B.longest||0,pace}})}</div><button class="btn" id="setg" style="margin-top:14px">${S.goal?'Save':'Build my plan'}</button>`;
+}
+
+{const lastId=LS.get('rq.last');if(LS.get('rq.skip')=='1'&&lastId&&AIDX.some(a=>a.id==lastId))openAcc(lastId);else render()}
 </script></body></html>
